@@ -259,7 +259,8 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
             # Memory cleanup
             del real_images, fake_images, z, real_output, fake_output
             if i % 5 == 0:  # Cleanup every 5 batches
-                torch.cuda.empty_cache() if torch.cuda.is_available() else None
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
                 gc.collect()
         
         if batches == 0:
