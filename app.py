@@ -44,74 +44,65 @@ st.markdown("""
 # Device configuration for memory efficiency
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class SimpleGenerator(nn.Module):
-    """Lightweight generator network"""
-    def __init__(self, latent_dim=100, img_channels=3, img_size=64):
+class Generator(nn.Module):
+    """Powerful DCGAN-style generator"""
+    def __init__(self, latent_dim=100, img_channels=3, feature_maps=64):
         super().__init__()
-        self.img_size = img_size
-        self.img_channels = img_channels
-        
-        # Calculate initial size for reshape
-        init_size = img_size // 4
-        self.init_size = init_size
-        
-        self.linear = nn.Sequential(
-            nn.Linear(latent_dim, 128 * init_size ** 2),
-            nn.LeakyReLU(0.2)
-        )
-        
-        self.conv_blocks = nn.Sequential(
-            nn.BatchNorm2d(128),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 128, 3, stride=1, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 64, 3, stride=1, padding=1),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(0.2),
-            nn.Conv2d(64, img_channels, 3, stride=1, padding=1),
+        self.main = nn.Sequential(
+            # Input: Z (latent vector)
+            nn.ConvTranspose2d(latent_dim, feature_maps * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(feature_maps * 8),
+            nn.ReLU(True),
+            # State size: (feature_maps*8) x 4 x 4
+            nn.ConvTranspose2d(feature_maps * 8, feature_maps * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 4),
+            nn.ReLU(True),
+            # State size: (feature_maps*4) x 8 x 8
+            nn.ConvTranspose2d(feature_maps * 4, feature_maps * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 2),
+            nn.ReLU(True),
+            # State size: (feature_maps*2) x 16 x 16
+            nn.ConvTranspose2d(feature_maps * 2, feature_maps, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps),
+            nn.ReLU(True),
+            # State size: (feature_maps) x 32 x 32
+            nn.ConvTranspose2d(feature_maps, img_channels, 4, 2, 1, bias=False),
             nn.Tanh()
+            # Final state size: (img_channels) x 64 x 64
         )
-    
+
     def forward(self, z):
-        out = self.linear(z)
-        out = out.view(out.shape[0], 128, self.init_size, self.init_size)
-        img = self.conv_blocks(out)
-        return img
+        # Reshape z from (batch, latent_dim) to (batch, latent_dim, 1, 1)
+        z = z.view(z.shape[0], -1, 1, 1)
+        return self.main(z)
 
-class SimpleDiscriminator(nn.Module):
-    """Lightweight discriminator network"""
-    def __init__(self, img_channels=3, img_size=64):
+class Discriminator(nn.Module):
+    """Powerful DCGAN-style discriminator (Critic)"""
+    def __init__(self, img_channels=3, feature_maps=64):
         super().__init__()
-        
-        def discriminator_block(in_filters, out_filters, stride=2):
-            return [
-                nn.Conv2d(in_filters, out_filters, 3, stride, 1),
-                nn.LeakyReLU(0.2),
-                nn.Dropout2d(0.25)
-            ]
-        
-        self.model = nn.Sequential(
-            *discriminator_block(img_channels, 16, 2),
-            *discriminator_block(16, 32, 2),
-            *discriminator_block(32, 64, 2),
-            *discriminator_block(64, 128, 2),
+        self.main = nn.Sequential(
+            # Input size: (img_channels) x 64 x 64
+            nn.Conv2d(img_channels, feature_maps, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps) x 32 x 32
+            nn.Conv2d(feature_maps, feature_maps * 2, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 2, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*2) x 16 x 16
+            nn.Conv2d(feature_maps * 2, feature_maps * 4, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 4, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*4) x 8 x 8
+            nn.Conv2d(feature_maps * 4, feature_maps * 8, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 8, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*8) x 4 x 4
+            nn.Conv2d(feature_maps * 8, 1, 4, 1, 0, bias=False),
+            # Final output is a single raw score, not a probability
         )
-        
-        # Calculate the size after convolutions
-        ds_size = img_size // 2 ** 4
-        self.adv_layer = nn.Sequential(
-            nn.Linear(128 * ds_size ** 2, 1),
-            nn.Sigmoid()
-        )
-    
-    def forward(self, img):
-        out = self.model(img)
-        out = out.view(out.shape[0], -1)
-        validity = self.adv_layer(out)
-        return validity
 
+    def forward(self, img):
+        return self.main(img)
 class ImageDataset(Dataset):
     """Custom dataset for uploaded images"""
     def __init__(self, images, transform=None, img_size=64):
@@ -169,11 +160,36 @@ def preprocess_images(uploaded_files, img_size=64):
     
     return images, valid_files
 
-def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_size=64):
-    """Train the GAN with memory-efficient approach"""
+def compute_gradient_penalty(discriminator, real_samples, fake_samples):
+    """Calculates the gradient penalty for WGAN-GP"""
+    alpha = torch.rand(real_samples.size(0), 1, 1, 1, device=device)
+    interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+    d_interpolates = discriminator(interpolates)
+    fake = torch.ones(d_interpolates.size(), device=device, requires_grad=False)
     
-    # Data preparation
+    gradients = torch.autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+    
+    gradients = gradients.view(gradients.size(0), -1)
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gradient_penalty
+
+def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_size=64):
+    """Train the WGAN-GP with memory-efficient approach and data augmentation"""
+    
+    # 1. HEAVY DATA AUGMENTATION
+    # This is key for training on a small number of images
     transform = transforms.Compose([
+        transforms.RandomResizedCrop(img_size, scale=(0.8, 1.0)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.RandomRotation(15),
         transforms.ToTensor(),
         transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     ])
@@ -185,106 +201,116 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
         st.error(f"🚫 Cannot start training. The number of valid images ({len(dataset)}) is less than the batch size ({batch_size}). Please upload more images or reduce the batch size.")
         return None, None, [], []
 
-    # Initialize networks
-    generator = SimpleGenerator(latent_dim=latent_dim, img_size=img_size).to(device)
-    discriminator = SimpleDiscriminator(img_size=img_size).to(device)
+    # 2. UPDATED MODEL INITIALIZATION
+    # Using the new Generator and Discriminator classes
+    generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=img_size).to(device)
+    discriminator = Discriminator(img_channels=3, feature_maps=img_size).to(device)
     
-    # Loss and optimizers
-    criterion = nn.BCELoss()
-    optimizer_G = optim.Adam(generator.parameters(), lr=lr, betas=(0.5, 0.999))
-    optimizer_D = optim.Adam(discriminator.parameters(), lr=lr, betas=(0.5, 0.999))
+    # WGAN-GP parameters
+    lambda_gp = 10
+    n_critic = 5 # Train discriminator more often than generator
     
-    # Training progress containers with colorful headers
+    # Use Adam optimizers with parameters recommended for WGAN
+    optimizer_G = optim.Adam(generator.parameters(), lr=lr, betas=(0.5, 0.9))
+    optimizer_D = optim.Adam(discriminator.parameters(), lr=lr, betas=(0.5, 0.9))
+    
     st.markdown("### 🎯 Training Progress Dashboard")
     progress_bar = st.progress(0, text="🚀 Starting training...")
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        d_loss_metric = st.metric("🔴 Discriminator Loss", "0.0000")
+        d_loss_metric = st.metric("🔴 Critic Loss", "0.00")
     with col2:
-        g_loss_metric = st.metric("🔵 Generator Loss", "0.0000") 
+        g_loss_metric = st.metric("🔵 Generator Loss", "0.00") 
     with col3:
         epoch_metric = st.metric("⏳ Current Epoch", "0")
     
     loss_chart = st.empty()
     sample_container = st.empty()
     
-    # Training history
     d_losses = []
     g_losses = []
     
-    # Training loop
+    # 3. NEW WGAN-GP TRAINING LOOP
     for epoch in range(epochs):
         epoch_d_loss = 0
         epoch_g_loss = 0
         batches = 0
         
         for i, real_images in enumerate(dataloader):
-            batch_size_actual = real_images.size(0)
             real_images = real_images.to(device)
+            batch_size_actual = real_images.size(0)
             
-            # Labels
-            real_labels = torch.ones(batch_size_actual, 1, device=device)
-            fake_labels = torch.zeros(batch_size_actual, 1, device=device)
-            
-            # Train Discriminator
+            # ---------------------
+            #  Train Discriminator (Critic)
+            # ---------------------
             optimizer_D.zero_grad()
             
-            # Real images
-            real_output = discriminator(real_images)
-            d_loss_real = criterion(real_output, real_labels)
-            
-            # Fake images
+            # Sample noise as generator input
             z = torch.randn(batch_size_actual, latent_dim, device=device)
             fake_images = generator(z)
-            fake_output = discriminator(fake_images.detach())
-            d_loss_fake = criterion(fake_output, fake_labels)
             
-            d_loss = (d_loss_real + d_loss_fake) / 2
+            # Real and fake images scores
+            real_validity = discriminator(real_images)
+            fake_validity = discriminator(fake_images.detach())
+            
+            # Gradient penalty
+            gradient_penalty = compute_gradient_penalty(discriminator, real_images.data, fake_images.data)
+            
+            # Critic loss
+            d_loss = -torch.mean(real_validity) + torch.mean(fake_validity) + lambda_gp * gradient_penalty
+            
             d_loss.backward()
             optimizer_D.step()
             
-            # Train Generator
-            optimizer_G.zero_grad()
-            
-            fake_output = discriminator(fake_images)
-            g_loss = criterion(fake_output, real_labels)
-            g_loss.backward()
-            optimizer_G.step()
-            
             epoch_d_loss += d_loss.item()
-            epoch_g_loss += g_loss.item()
+            
+            # Train the generator only every n_critic iterations
+            if i % n_critic == 0:
+                # -----------------
+                #  Train Generator
+                # -----------------
+                optimizer_G.zero_grad()
+                
+                # Generate a batch of images
+                gen_imgs = generator(z)
+                
+                # Generator loss
+                g_loss = -torch.mean(discriminator(gen_imgs))
+                
+                g_loss.backward()
+                optimizer_G.step()
+                
+                epoch_g_loss += g_loss.item()
+
             batches += 1
             
             # Memory cleanup
-            del real_images, fake_images, z, real_output, fake_output
-            if i % 5 == 0:  # Cleanup every 5 batches
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                gc.collect()
-        
+            del real_images, fake_images, z
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
         if batches == 0:
-            st.warning(f"⚠️ Epoch {epoch+1}/{epochs} - No batches processed. Is number of images < batch size?")
+            st.warning(f"⚠️ Epoch {epoch+1}/{epochs} - No batches processed.")
             continue
         
-        # Record losses
         avg_d_loss = epoch_d_loss / batches
-        avg_g_loss = epoch_g_loss / batches
+        avg_g_loss = epoch_g_loss / (batches / n_critic) if batches > 0 else 0
         d_losses.append(avg_d_loss)
         g_losses.append(avg_g_loss)
         
-        # Update progress and metrics with emojis
         progress = (epoch + 1) / epochs
         progress_bar.progress(progress, text=f"🎨 Training in progress... Epoch {epoch+1}/{epochs}")
         
-        d_loss_metric.metric("🔴 Discriminator Loss", f"{avg_d_loss:.4f}")
-        g_loss_metric.metric("🔵 Generator Loss", f"{avg_g_loss:.4f}")
+        d_loss_metric.metric("🔴 Critic Loss", f"{avg_d_loss:.2f}")
+        g_loss_metric.metric("🔵 Generator Loss", f"{avg_g_loss:.2f}")
         epoch_metric.metric("⏳ Current Epoch", f"{epoch+1}/{epochs}")
         
-        # Update loss chart every 5 epochs with colorful styling
+        # (The rest of the function for plotting losses and showing samples can remain the same)
+        # ... [Plotting and sampling code from your original file] ...
         if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
             fig, ax = plt.subplots(figsize=(10, 5))
-            ax.plot(d_losses, label='🔴 Discriminator Loss', color='#ff6b6b', linewidth=2.5, alpha=0.8)
+            ax.plot(d_losses, label='🔴 Critic Loss', color='#ff6b6b', linewidth=2.5, alpha=0.8)
             ax.plot(g_losses, label='🔵 Generator Loss', color='#4ecdc4', linewidth=2.5, alpha=0.8)
             ax.set_xlabel('Epoch', fontsize=12, fontweight='bold')
             ax.set_ylabel('Loss', fontsize=12, fontweight='bold')
@@ -295,13 +321,12 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
             fig.patch.set_facecolor('white')
             loss_chart.pyplot(fig)
             plt.close(fig)
-        
-        # Generate sample images every 10 epochs with better styling
+
         if (epoch + 1) % 10 == 0 or epoch == epochs - 1:
             with torch.no_grad():
                 sample_z = torch.randn(4, latent_dim, device=device)
                 sample_images = generator(sample_z)
-                sample_images = (sample_images + 1) / 2  # Denormalize
+                sample_images = (sample_images + 1) / 2
                 
                 fig, axes = plt.subplots(1, 4, figsize=(14, 4))
                 fig.suptitle(f'🎨 Generated Images - Epoch {epoch+1}', fontsize=16, fontweight='bold', y=1.05)
@@ -312,7 +337,6 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
                     axes[j].imshow(img)
                     axes[j].axis('off')
                     axes[j].set_title(f'✨ Sample {j+1}', fontsize=12, pad=10)
-                    # Add colorful border
                     for spine in axes[j].spines.values():
                         spine.set_edgecolor(['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'][j])
                         spine.set_linewidth(3)
@@ -322,7 +346,7 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
                 plt.close(fig)
                 
                 del sample_z, sample_images
-    
+                
     return generator, discriminator, d_losses, g_losses
 
 def generate_images(generator, num_images=8, latent_dim=100):
