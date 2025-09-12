@@ -315,7 +315,7 @@ def main():
     # Sidebar for parameters
     st.sidebar.header("Training Parameters")
     img_size = st.sidebar.selectbox("Image Size", [32, 64, 128], index=1)
-    epochs = st.sidebar.slider("Epochs", 10, 200, 50)
+    epochs = st.sidebar.slider("Epochs", 100, 20000, 200)
     batch_size = st.sidebar.slider("Batch Size", 1, 8, 4)
     lr = st.sidebar.number_input("Learning Rate", 0.0001, 0.01, 0.0002, format="%.4f")
     latent_dim = st.sidebar.slider("Latent Dimension", 50, 200, 100)
