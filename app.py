@@ -387,7 +387,7 @@ def main():
                                help="Higher = better quality, more memory")
         
         st.markdown("#### ⚡ **Training Parameters**")
-        epochs = st.slider("🔄 Training Epochs", 10, 200, 50, 
+        epochs = st.slider("🔄 Training Epochs", 10, 2000, 500, 
                           help="More epochs = better results, longer training")
         batch_size = st.slider("📦 Batch Size", 1, 8, 4,
                               help="Lower if running out of memory")
