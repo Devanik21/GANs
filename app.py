@@ -444,7 +444,7 @@ def main():
                         try:
                             img = Image.open(file)
                             with cols[i]:
-                                st.image(img, caption=f"✨ Image {i+1}", use_column_width=True)
+                                st.image(img, caption=f"✨ Image {i+1}", use_container_width=True)
                         except Exception as e:
                             cols[i].error(f"❌ Error: {file.name}")
         
