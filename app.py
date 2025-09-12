@@ -480,7 +480,7 @@ def main():
                         st.error("❌ No valid images found")
                         return
                     
-                    st.balloons()  # Celebration animation
+                      # Celebration animation
                     st.success(f"✅ Processing {valid_files} beautiful images")
                     
                     # Train the GAN
@@ -490,7 +490,7 @@ def main():
                         )
                         
                         if generator is not None:
-                            st.balloons()  # Another celebration
+                            # Another celebration
                             st.success("🎉 **Training Complete!** Your AI artist is ready!")
                             
                             # Store models in session state
