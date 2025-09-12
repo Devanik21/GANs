@@ -111,16 +111,33 @@ def preprocess_images(uploaded_files, img_size=64):
     images = []
     valid_files = 0
     
-    for file in uploaded_files:
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    for idx, file in enumerate(uploaded_files):
         try:
+            # Update progress
+            progress_bar.progress((idx + 1) / len(uploaded_files))
+            status_text.text(f"Processing image {idx + 1}/{len(uploaded_files)}: {file.name}")
+            
             image = Image.open(file)
             # Convert to RGB if needed
             if image.mode != 'RGB':
                 image = image.convert('RGB')
+            
+            # Basic validation - check if image is too small
+            if image.size[0] < 16 or image.size[1] < 16:
+                st.warning(f"Skipping {file.name}: image too small (minimum 16x16)")
+                continue
+                
             images.append(image)
             valid_files += 1
+            
         except Exception as e:
             st.warning(f"Could not process file {file.name}: {e}")
+    
+    progress_bar.empty()
+    status_text.empty()
     
     return images, valid_files
 
