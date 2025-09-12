@@ -153,6 +153,11 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
     dataset = ImageDataset(images, transform=transform, img_size=img_size)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     
+    # <-- CHANGED: Add a check here to prevent training with no data
+    if len(dataloader) == 0:
+        st.error(f"Cannot start training. The number of valid images ({len(dataset)}) is less than the batch size ({batch_size}). Please upload more images or reduce the batch size.")
+        return None, None, [], []
+
     # Initialize networks
     generator = SimpleGenerator(latent_dim=latent_dim, img_size=img_size).to(device)
     discriminator = SimpleDiscriminator(img_size=img_size).to(device)
@@ -221,6 +226,11 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
                 torch.cuda.empty_cache() if torch.cuda.is_available() else None
                 gc.collect()
         
+        # <-- CHANGED: Add a safeguard to prevent division by zero
+        if batches == 0:
+            status_text.warning(f"Epoch {epoch+1}/{epochs} - No batches processed. Is number of images < batch size?")
+            continue # Skip to the next epoch
+        
         # Record losses
         avg_d_loss = epoch_d_loss / batches
         avg_g_loss = epoch_g_loss / batches
@@ -233,7 +243,7 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
         status_text.text(f"Epoch {epoch+1}/{epochs} - D Loss: {avg_d_loss:.4f}, G Loss: {avg_g_loss:.4f}")
         
         # Update loss chart every 5 epochs
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
             fig, ax = plt.subplots(figsize=(8, 4))
             ax.plot(d_losses, label='Discriminator Loss', color='red', alpha=0.7)
             ax.plot(g_losses, label='Generator Loss', color='blue', alpha=0.7)
@@ -246,7 +256,7 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
             plt.close(fig)
         
         # Generate sample images every 10 epochs
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % 10 == 0 or epoch == epochs - 1:
             with torch.no_grad():
                 sample_z = torch.randn(4, latent_dim, device=device)
                 sample_images = generator(sample_z)
@@ -279,7 +289,7 @@ def generate_images(generator, num_images=8, latent_dim=100):
         
         # Create grid
         rows = 2
-        cols = num_images // rows
+        cols = (num_images + 1) // rows
         fig, axes = plt.subplots(rows, cols, figsize=(12, 6))
         axes = axes.flatten()
         
@@ -288,7 +298,10 @@ def generate_images(generator, num_images=8, latent_dim=100):
             img = np.clip(img, 0, 1)
             axes[i].imshow(img)
             axes[i].axis('off')
-            axes[i].set_title(f'Generated {i+1}')
+        
+        # Turn off unused subplots
+        for i in range(num_images, len(axes)):
+            axes[i].axis('off')
         
         plt.suptitle('Generated Images')
         plt.tight_layout()
@@ -372,13 +385,15 @@ def main():
                     images, epochs, batch_size, lr, latent_dim, img_size
                 )
                 
-                st.success("🎉 Training completed!")
-                
-                # Store models in session state
-                st.session_state['generator'] = generator
-                st.session_state['discriminator'] = discriminator
-                st.session_state['trained'] = True
-                st.session_state['latent_dim'] = latent_dim
+                # <-- CHANGED: Check if training was successful before proceeding
+                if generator is not None:
+                    st.success("🎉 Training completed!")
+                    
+                    # Store models in session state
+                    st.session_state['generator'] = generator
+                    st.session_state['discriminator'] = discriminator
+                    st.session_state['trained'] = True
+                    st.session_state['latent_dim'] = latent_dim
                 
             except RuntimeError as e:
                 if "out of memory" in str(e).lower():
@@ -390,11 +405,12 @@ def main():
     
     # Generation section
     if st.session_state.get('trained', False):
+        st.divider() # Add a visual separator
         st.header("🎨 Generate New Images")
         
-        col1, col2 = st.columns([1, 2])
+        gen_col1, gen_col2 = st.columns([1, 2])
         
-        with col1:
+        with gen_col1:
             num_generate = st.slider("Number of images to generate", 1, 16, 8)
             
             if st.button("Generate Images", type="secondary"):
@@ -405,26 +421,26 @@ def main():
                             num_generate, 
                             st.session_state['latent_dim']
                         )
-                        with col2:
+                        with gen_col2:
                             st.pyplot(fig)
                         plt.close(fig)
                     except Exception as e:
                         st.error(f"Generation error: {e}")
     
-    # Clear memory button
-    if st.button("🧹 Clear Memory", help="Clear GPU/CPU memory"):
-        if 'generator' in st.session_state:
-            del st.session_state['generator']
-        if 'discriminator' in st.session_state:
-            del st.session_state['discriminator']
-        st.session_state['trained'] = False
+    st.sidebar.divider()
+    if st.sidebar.button("🧹 Clear Memory & State", help="Clear GPU/CPU memory and reset app state"):
+        # Clear specific keys
+        for key in ['generator', 'discriminator', 'trained', 'latent_dim']:
+            if key in st.session_state:
+                del st.session_state[key]
         
         # Clear GPU cache
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         gc.collect()
         
-        st.success("Memory cleared!")
+        st.success("Memory cleared and state reset!")
+        st.rerun() # Rerun the app to reflect the cleared state
 
 if __name__ == "__main__":
     # Initialize session state
