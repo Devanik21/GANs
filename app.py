@@ -540,7 +540,11 @@ def train_simple_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
 
 def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_size=64):
     """Train the WGAN-GP with memory-efficient approach and data augmentation"""
-    
+
+
+    f img_size != 64:
+    st.warning(f"⚠️ DCGAN-WGAN model is optimized for 64x64 images. Forcing resolution to 64px.")
+    img_size = 64
     # 1. HEAVY DATA AUGMENTATION
     # This is key for training on a small number of images
     transform = transforms.Compose([
