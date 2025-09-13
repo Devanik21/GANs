@@ -543,8 +543,12 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
 
 
     if img_size != 64:
-    st.warning(f"⚠️ DCGAN-WGAN model is optimized for 64x64 images. Forcing resolution to 64px.")
-    img_size = 64
+        
+        st.warning(f"⚠️ DCGAN-WGAN model is optimized for 64x64 images. Forcing resolution to 64px.")
+        img_size = 64
+    
+    #st.warning(f"⚠️ DCGAN-WGAN model is optimized for 64x64 images. Forcing resolution to 64px.")
+    
     # 1. HEAVY DATA AUGMENTATION
     # This is key for training on a small number of images
     transform = transforms.Compose([
