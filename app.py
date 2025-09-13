@@ -44,6 +44,79 @@ st.markdown("""
 # Device configuration for memory efficiency
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+class Generator128(nn.Module):
+    """Generator capable of producing 128x128 images."""
+    def __init__(self, latent_dim=100, img_channels=3, feature_maps=64):
+        super().__init__()
+        self.main = nn.Sequential(
+            # Input: Z (latent vector)
+            nn.ConvTranspose2d(latent_dim, feature_maps * 16, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(feature_maps * 16),
+            nn.ReLU(True),
+            # State size: (feature_maps*16) x 4 x 4
+            nn.ConvTranspose2d(feature_maps * 16, feature_maps * 8, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 8),
+            nn.ReLU(True),
+            # State size: (feature_maps*8) x 8 x 8
+            nn.ConvTranspose2d(feature_maps * 8, feature_maps * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 4),
+            nn.ReLU(True),
+            # State size: (feature_maps*4) x 16 x 16
+            nn.ConvTranspose2d(feature_maps * 4, feature_maps * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 2),
+            nn.ReLU(True),
+            # State size: (feature_maps*2) x 32 x 32
+            nn.ConvTranspose2d(feature_maps * 2, feature_maps, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps),
+            nn.ReLU(True),
+            # State size: (feature_maps) x 64 x 64
+            # --- NEW LAYER FOR 128x128 ---
+            nn.ConvTranspose2d(feature_maps, img_channels, 4, 2, 1, bias=False),
+            nn.Tanh()
+            # Final state size: (img_channels) x 128 x 128
+        )
+
+    def forward(self, z):
+        z = z.view(z.shape[0], -1, 1, 1)
+        return self.main(z)
+
+
+
+
+class Discriminator128(nn.Module):
+    """Discriminator capable of handling 128x128 images."""
+    def __init__(self, img_channels=3, feature_maps=64):
+        super().__init__()
+        self.main = nn.Sequential(
+            # --- NEW LAYER FOR 128x128 INPUT ---
+            # Input size: (img_channels) x 128 x 128
+            nn.Conv2d(img_channels, feature_maps, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps) x 64 x 64
+            nn.Conv2d(feature_maps, feature_maps * 2, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 2, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*2) x 32 x 32
+            nn.Conv2d(feature_maps * 2, feature_maps * 4, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 4, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*4) x 16 x 16
+            nn.Conv2d(feature_maps * 4, feature_maps * 8, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 8, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*8) x 8 x 8
+            nn.Conv2d(feature_maps * 8, feature_maps * 16, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 16, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*16) x 4 x 4
+            nn.Conv2d(feature_maps * 16, 1, 4, 1, 0, bias=False),
+        )
+
+    def forward(self, img):
+        return self.main(img)
+
+
+
 # ===================== SIMPLE GAN MODELS =====================
 class SimpleGenerator(nn.Module):
     """Lightweight generator network"""
@@ -569,10 +642,16 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
 
     # 2. UPDATED MODEL INITIALIZATION (PASSING IMG_SIZE)
     # This now uses the flexible models which adapt to the image size
-    generator = Generator(latent_dim=latent_dim, img_channels=3, img_size=img_size, feature_maps=64).to(device)
-     # Correct line
-    discriminator = Discriminator(img_channels=3, feature_maps=64).to(device)
-    
+    st.info(f"🚀 Initializing DCGAN-WGAN model for {img_size}x{img_size} images...")
+    if img_size == 64:
+        generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=64).to(device)
+        discriminator = Discriminator(img_channels=3, feature_maps=64).to(device)
+    elif img_size == 128:
+        generator = Generator128(latent_dim=latent_dim, img_channels=3, feature_maps=64).to(device)
+        discriminator = Discriminator128(latent_dim=latent_dim, img_channels=3, feature_maps=64).to(device)
+    else:
+    # This will handle 32px or any other unsupported sizes for this model
+        st.error(f"🚫 The DCGAN-WGAN model only supports 64x64 or 128x128 resolution.")
     # WGAN-GP parameters
     lambda_gp = 10
     n_critic = 5 # Train discriminator more often than generator
