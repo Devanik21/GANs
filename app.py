@@ -115,6 +115,7 @@ class SimpleDiscriminator(nn.Module):
 
 # ===================== DCGAN MODELS =====================
 # ===================== DCGAN MODELS (DYNAMIC & IMPROVED) =====================
+# ===================== DCGAN MODELS (DYNAMIC & IMPROVED) =====================
 class Generator(nn.Module):
     """Powerful and FLEXIBLE DCGAN-style generator"""
     def __init__(self, latent_dim=100, img_channels=3, img_size=64, feature_maps=64):
@@ -157,6 +158,45 @@ class Generator(nn.Module):
         # Reshape z from (batch, latent_dim) to (batch, latent_dim, 1, 1)
         z = z.view(z.shape[0], -1, 1, 1)
         return self.main(z)
+
+class Discriminator(nn.Module):
+    """Powerful and FLEXIBLE DCGAN-style discriminator (Critic)"""
+    def __init__(self, img_channels=3, img_size=64, feature_maps=64):
+        super().__init__()
+        
+        # Calculate the number of downsampling blocks
+        num_blocks = int(np.log2(img_size) - 2)
+        if num_blocks < 1:
+            raise ValueError(f"Image size {img_size} is too small for this DCGAN architecture. Minimum is 8.")
+
+        layers = []
+        
+        # Initial layer
+        layers.extend([
+            nn.Conv2d(img_channels, feature_maps, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True)
+        ])
+        
+        in_features = feature_maps
+        # Downsampling blocks
+        for i in range(num_blocks - 1):
+            out_features = in_features * 2
+            layers.extend([
+                nn.Conv2d(in_features, out_features, 4, 2, 1, bias=False),
+                nn.InstanceNorm2d(out_features, affine=True),
+                nn.LeakyReLU(0.2, inplace=True)
+            ])
+            in_features = out_features
+            
+        # Final layer: downsample to a 1x1 feature map (a single score)
+        layers.extend([
+            nn.Conv2d(in_features, 1, 4, 1, 0, bias=False)
+        ])
+        
+        self.main = nn.Sequential(*layers)
+
+    def forward(self, img):
+        return self.main(img)
 
 class Discriminator(nn.Module):
     """Powerful and FLEXIBLE DCGAN-style discriminator (Critic)"""
