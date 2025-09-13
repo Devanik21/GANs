@@ -44,6 +44,7 @@ st.markdown("""
 # Device configuration for memory efficiency
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# ===================== SIMPLE GAN MODELS =====================
 class SimpleGenerator(nn.Module):
     """Lightweight generator network"""
     def __init__(self, latent_dim=100, img_channels=3, img_size=64):
@@ -112,6 +113,67 @@ class SimpleDiscriminator(nn.Module):
         validity = self.adv_layer(out)
         return validity
 
+# ===================== DCGAN MODELS =====================
+class Generator(nn.Module):
+    """Powerful DCGAN-style generator"""
+    def __init__(self, latent_dim=100, img_channels=3, feature_maps=64):
+        super().__init__()
+        self.main = nn.Sequential(
+            # Input: Z (latent vector)
+            nn.ConvTranspose2d(latent_dim, feature_maps * 8, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(feature_maps * 8),
+            nn.ReLU(True),
+            # State size: (feature_maps*8) x 4 x 4
+            nn.ConvTranspose2d(feature_maps * 8, feature_maps * 4, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 4),
+            nn.ReLU(True),
+            # State size: (feature_maps*4) x 8 x 8
+            nn.ConvTranspose2d(feature_maps * 4, feature_maps * 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps * 2),
+            nn.ReLU(True),
+            # State size: (feature_maps*2) x 16 x 16
+            nn.ConvTranspose2d(feature_maps * 2, feature_maps, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(feature_maps),
+            nn.ReLU(True),
+            # State size: (feature_maps) x 32 x 32
+            nn.ConvTranspose2d(feature_maps, img_channels, 4, 2, 1, bias=False),
+            nn.Tanh()
+            # Final state size: (img_channels) x 64 x 64
+        )
+
+    def forward(self, z):
+        # Reshape z from (batch, latent_dim) to (batch, latent_dim, 1, 1)
+        z = z.view(z.shape[0], -1, 1, 1)
+        return self.main(z)
+
+class Discriminator(nn.Module):
+    """Powerful DCGAN-style discriminator (Critic)"""
+    def __init__(self, img_channels=3, feature_maps=64):
+        super().__init__()
+        self.main = nn.Sequential(
+            # Input size: (img_channels) x 64 x 64
+            nn.Conv2d(img_channels, feature_maps, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps) x 32 x 32
+            nn.Conv2d(feature_maps, feature_maps * 2, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 2, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*2) x 16 x 16
+            nn.Conv2d(feature_maps * 2, feature_maps * 4, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 4, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*4) x 8 x 8
+            nn.Conv2d(feature_maps * 4, feature_maps * 8, 4, 2, 1, bias=False),
+            nn.InstanceNorm2d(feature_maps * 8, affine=True),
+            nn.LeakyReLU(0.2, inplace=True),
+            # State size: (feature_maps*8) x 4 x 4
+            nn.Conv2d(feature_maps * 8, 1, 4, 1, 0, bias=False),
+            # Final output is a single raw score, not a probability
+        )
+
+    def forward(self, img):
+        return self.main(img)
+
 class ImageDataset(Dataset):
     """Custom dataset for uploaded images"""
     def __init__(self, images, transform=None, img_size=64):
@@ -138,7 +200,7 @@ def preprocess_images(uploaded_files, img_size=64):
     images = []
     valid_files = 0
     
-    progress_bar = st.progress(0, text="🔄 Processing images...")
+    progress_bar = st.progress(0, text="📄 Processing images...")
     status_text = st.empty()
     
     for idx, file in enumerate(uploaded_files):
@@ -169,8 +231,28 @@ def preprocess_images(uploaded_files, img_size=64):
     
     return images, valid_files
 
-def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_size=64):
-    """Train the GAN with memory-efficient approach"""
+def compute_gradient_penalty(discriminator, real_samples, fake_samples):
+    """Calculates the gradient penalty for WGAN-GP"""
+    alpha = torch.rand(real_samples.size(0), 1, 1, 1, device=device)
+    interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
+    d_interpolates = discriminator(interpolates)
+    fake = torch.ones(d_interpolates.size(), device=device, requires_grad=False)
+    
+    gradients = torch.autograd.grad(
+        outputs=d_interpolates,
+        inputs=interpolates,
+        grad_outputs=fake,
+        create_graph=True,
+        retain_graph=True,
+        only_inputs=True,
+    )[0]
+    
+    gradients = gradients.view(gradients.size(0), -1)
+    gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+    return gradient_penalty
+
+def train_simple_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_size=64):
+    """Train the Simple GAN with basic loss"""
     
     # Data preparation
     transform = transforms.Compose([
@@ -325,11 +407,183 @@ def train_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_si
     
     return generator, discriminator, d_losses, g_losses
 
-def generate_images(generator, num_images=8, latent_dim=100):
+def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100, img_size=64):
+    """Train the WGAN-GP with memory-efficient approach and data augmentation"""
+    
+    # 1. HEAVY DATA AUGMENTATION
+    # This is key for training on a small number of images
+    transform = transforms.Compose([
+        transforms.RandomResizedCrop(img_size, scale=(0.8, 1.0)),
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.RandomRotation(15),
+        transforms.ToTensor(),
+        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+    ])
+    
+    dataset = ImageDataset(images, transform=transform, img_size=img_size)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=True)
+    
+    if len(dataloader) == 0:
+        st.error(f"🚫 Cannot start training. The number of valid images ({len(dataset)}) is less than the batch size ({batch_size}). Please upload more images or reduce the batch size.")
+        return None, None, [], []
+
+    # 2. UPDATED MODEL INITIALIZATION
+    # Using the new Generator and Discriminator classes
+    generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=img_size).to(device)
+    discriminator = Discriminator(img_channels=3, feature_maps=img_size).to(device)
+    
+    # WGAN-GP parameters
+    lambda_gp = 10
+    n_critic = 5 # Train discriminator more often than generator
+    
+    # Use Adam optimizers with parameters recommended for WGAN
+    optimizer_G = optim.Adam(generator.parameters(), lr=lr, betas=(0.5, 0.9))
+    optimizer_D = optim.Adam(discriminator.parameters(), lr=lr, betas=(0.5, 0.9))
+    
+    st.markdown("### 🎯 Training Progress Dashboard")
+    progress_bar = st.progress(0, text="🚀 Starting training...")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        d_loss_metric = st.metric("🔴 Critic Loss", "0.00")
+    with col2:
+        g_loss_metric = st.metric("🔵 Generator Loss", "0.00") 
+    with col3:
+        epoch_metric = st.metric("⏳ Current Epoch", "0")
+    
+    loss_chart = st.empty()
+    sample_container = st.empty()
+    
+    d_losses = []
+    g_losses = []
+    
+    # 3. NEW WGAN-GP TRAINING LOOP
+    for epoch in range(epochs):
+        epoch_d_loss = 0
+        epoch_g_loss = 0
+        batches = 0
+        
+        for i, real_images in enumerate(dataloader):
+            real_images = real_images.to(device)
+            batch_size_actual = real_images.size(0)
+            
+            # ---------------------
+            #  Train Discriminator (Critic)
+            # ---------------------
+            optimizer_D.zero_grad()
+            
+            # Sample noise as generator input
+            z = torch.randn(batch_size_actual, latent_dim, device=device)
+            fake_images = generator(z)
+            
+            # Real and fake images scores
+            real_validity = discriminator(real_images)
+            fake_validity = discriminator(fake_images.detach())
+            
+            # Gradient penalty
+            gradient_penalty = compute_gradient_penalty(discriminator, real_images.data, fake_images.data)
+            
+            # Critic loss
+            d_loss = -torch.mean(real_validity) + torch.mean(fake_validity) + lambda_gp * gradient_penalty
+            
+            d_loss.backward()
+            optimizer_D.step()
+            
+            epoch_d_loss += d_loss.item()
+            
+            # Train the generator only every n_critic iterations
+            if i % n_critic == 0:
+                # -----------------
+                #  Train Generator
+                # -----------------
+                optimizer_G.zero_grad()
+                
+                # Generate a batch of images
+                gen_imgs = generator(z)
+                
+                # Generator loss
+                g_loss = -torch.mean(discriminator(gen_imgs))
+                
+                g_loss.backward()
+                optimizer_G.step()
+                
+                epoch_g_loss += g_loss.item()
+
+            batches += 1
+            
+            # Memory cleanup
+            del real_images, fake_images, z
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+
+        if batches == 0:
+            st.warning(f"⚠️ Epoch {epoch+1}/{epochs} - No batches processed.")
+            continue
+        
+        avg_d_loss = epoch_d_loss / batches
+        avg_g_loss = epoch_g_loss / (batches / n_critic) if batches > 0 else 0
+        d_losses.append(avg_d_loss)
+        g_losses.append(avg_g_loss)
+        
+        progress = (epoch + 1) / epochs
+        progress_bar.progress(progress, text=f"🎨 Training in progress... Epoch {epoch+1}/{epochs}")
+        
+        d_loss_metric.metric("🔴 Critic Loss", f"{avg_d_loss:.2f}")
+        g_loss_metric.metric("🔵 Generator Loss", f"{avg_g_loss:.2f}")
+        epoch_metric.metric("⏳ Current Epoch", f"{epoch+1}/{epochs}")
+        
+        # Update loss chart every 5 epochs with colorful styling
+        if (epoch + 1) % 5 == 0 or epoch == epochs - 1:
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.plot(d_losses, label='🔴 Critic Loss', color='#ff6b6b', linewidth=2.5, alpha=0.8)
+            ax.plot(g_losses, label='🔵 Generator Loss', color='#4ecdc4', linewidth=2.5, alpha=0.8)
+            ax.set_xlabel('Epoch', fontsize=12, fontweight='bold')
+            ax.set_ylabel('Loss', fontsize=12, fontweight='bold')
+            ax.set_title('📈 Training Loss Curves', fontsize=14, fontweight='bold', pad=20)
+            ax.legend(fontsize=11)
+            ax.grid(True, alpha=0.3, linestyle='--')
+            ax.set_facecolor('#f8f9fa')
+            fig.patch.set_facecolor('white')
+            loss_chart.pyplot(fig)
+            plt.close(fig)
+
+        # Generate sample images every 10 epochs with better styling
+        if (epoch + 1) % 10 == 0 or epoch == epochs - 1:
+            with torch.no_grad():
+                sample_z = torch.randn(4, latent_dim, device=device)
+                sample_images = generator(sample_z)
+                sample_images = (sample_images + 1) / 2
+                
+                fig, axes = plt.subplots(1, 4, figsize=(14, 4))
+                fig.suptitle(f'🎨 Generated Images - Epoch {epoch+1}', fontsize=16, fontweight='bold', y=1.05)
+                
+                for j in range(4):
+                    img = sample_images[j].cpu().permute(1, 2, 0).numpy()
+                    img = np.clip(img, 0, 1)
+                    axes[j].imshow(img)
+                    axes[j].axis('off')
+                    axes[j].set_title(f'✨ Sample {j+1}', fontsize=12, pad=10)
+                    for spine in axes[j].spines.values():
+                        spine.set_edgecolor(['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4'][j])
+                        spine.set_linewidth(3)
+                
+                plt.tight_layout()
+                sample_container.pyplot(fig)
+                plt.close(fig)
+                
+                del sample_z, sample_images
+                
+    return generator, discriminator, d_losses, g_losses
+
+def generate_images(generator, num_images=8, latent_dim=100, is_simple=False):
     """Generate new images using trained generator"""
     generator.eval()
     with torch.no_grad():
         z = torch.randn(num_images, latent_dim, device=device)
+        if not is_simple:
+            # For DCGAN, reshape z for ConvTranspose2d input
+            z = z.view(z.shape[0], -1, 1, 1)
         generated_images = generator(z)
         generated_images = (generated_images + 1) / 2  # Denormalize
         
@@ -370,7 +624,7 @@ def main():
     st.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
         <h3 style="color: #666; font-weight: 300;">
-            ✨ Train powerful GANs on your images • 🚀 Optimized for 4GB memory • 🎯 Professional results
+            ✨ Train powerful GANs on your images • 🚀 Multiple model architectures • 🎯 Professional results
         </h3>
     </div>
     """, unsafe_allow_html=True)
@@ -380,14 +634,29 @@ def main():
         st.markdown("### 🎛️ **Training Control Panel**")
         
         # Add some colorful info boxes
-        st.info("💡 **Pro Tip**: Start with 32x32 images for faster training!")
+        st.info("💡 **Pro Tip**: DCGAN-WGAN works better with fewer images!")
+        
+        # MODEL SELECTION DROPDOWN
+        st.markdown("#### 🤖 **Model Architecture**")
+        model_type = st.selectbox(
+            "🧠 Choose GAN Model",
+            ["Simple GAN", "DCGAN-WGAN"],
+            index=0,
+            help="Simple GAN: Fast, good for beginners | DCGAN-WGAN: Advanced, better quality"
+        )
+        
+        # Show model info
+        if model_type == "Simple GAN":
+            st.success("⚡ **Fast Training** • Good for beginners")
+        else:
+            st.success("🎨 **High Quality** • Advanced architecture")
         
         st.markdown("#### 🖼️ **Image Settings**")
-        img_size = st.selectbox("📐 Image Resolution", [32, 64, 128], index=1, 
+        img_size = st.selectbox("📏 Image Resolution", [32, 64, 128], index=1, 
                                help="Higher = better quality, more memory")
         
         st.markdown("#### ⚡ **Training Parameters**")
-        epochs = st.slider("🔄 Training Epochs", 10, 2000, 500, 
+        epochs = st.slider("🔥 Training Epochs", 10, 2000, 500, 
                           help="More epochs = better results, longer training")
         batch_size = st.slider("📦 Batch Size", 1, 8, 4,
                               help="Lower if running out of memory")
@@ -467,27 +736,35 @@ def main():
                 if estimated_memory > 3:
                     st.warning("⚠️ **High memory usage!** Consider reducing image size or batch size.")
                 
+                # Display selected model info
+                st.info(f"🤖 **Selected Model**: {model_type}")
+                
                 # Big colorful training button
                 if st.button("🚀 **START TRAINING**", type="primary", use_container_width=True):
                     if len(uploaded_files) < 1:
                         st.error("🚫 Please upload at least 1 image")
                         return
                     
-                    with st.spinner("🔄 Preprocessing your masterpieces..."):
+                    with st.spinner("🔥 Preprocessing your masterpieces..."):
                         images, valid_files = preprocess_images(uploaded_files, img_size)
                     
                     if valid_files == 0:
                         st.error("❌ No valid images found")
                         return
                     
-                      # Celebration animation
+                    # Celebration animation
                     st.success(f"✅ Processing {valid_files} beautiful images")
                     
-                    # Train the GAN
+                    # Train the GAN based on selected model
                     try:
-                        generator, discriminator, d_losses, g_losses = train_gan(
-                            images, epochs, batch_size, lr, latent_dim, img_size
-                        )
+                        if model_type == "Simple GAN":
+                            generator, discriminator, d_losses, g_losses = train_simple_gan(
+                                images, epochs, batch_size, lr, latent_dim, img_size
+                            )
+                        else:  # DCGAN-WGAN
+                            generator, discriminator, d_losses, g_losses = train_dcgan_wgan(
+                                images, epochs, batch_size, lr, latent_dim, img_size
+                            )
                         
                         if generator is not None:
                             # Another celebration
@@ -498,11 +775,13 @@ def main():
                             st.session_state['discriminator'] = discriminator
                             st.session_state['trained'] = True
                             st.session_state['latent_dim'] = latent_dim
+                            st.session_state['model_type'] = model_type
                             
                             # Show training summary
                             col_summary1, col_summary2 = st.columns(2)
                             with col_summary1:
-                                st.metric("🎯 **Final D-Loss**", f"{d_losses[-1]:.4f}")
+                                loss_label = "🎯 **Final D-Loss**" if model_type == "Simple GAN" else "🎯 **Final C-Loss**"
+                                st.metric(loss_label, f"{d_losses[-1]:.4f}")
                             with col_summary2:
                                 st.metric("🎨 **Final G-Loss**", f"{g_losses[-1]:.4f}")
                     
@@ -531,14 +810,20 @@ def main():
                     seed_value = st.number_input("🌱 **Seed value**", 0, 9999, 42)
                     torch.manual_seed(seed_value)
                 
+                # Display current model info
+                current_model = st.session_state.get('model_type', 'Unknown')
+                st.info(f"🤖 **Current Model**: {current_model}")
+                
                 # Big generation button
                 if st.button("🎨 **GENERATE ART**", type="primary", use_container_width=True):
                     with st.spinner("🎭 Your AI is painting masterpieces..."):
                         try:
+                            is_simple = st.session_state.get('model_type', 'Simple GAN') == 'Simple GAN'
                             fig = generate_images(
                                 st.session_state['generator'], 
                                 num_generate, 
-                                st.session_state['latent_dim']
+                                st.session_state['latent_dim'],
+                                is_simple=is_simple
                             )
                             with col_gen2:
                                 st.pyplot(fig)
@@ -561,25 +846,38 @@ def main():
             - 🎨 **Infinite variations** with different random seeds  
             - 📊 **Batch generation** of multiple images at once
             - 🎭 **Style consistency** learned from your uploaded images
+            - 🤖 **Choice of model architectures** for different quality levels
             """)
     
     with tab3:
         st.markdown("### 📊 **Model Architecture & Info**")
         
         if st.session_state.get('trained', False):
+            current_model = st.session_state.get('model_type', 'Unknown')
+            
             col_info1, col_info2 = st.columns(2)
             
             with col_info1:
                 st.markdown("#### 🧠 **Generator Network**")
                 st.success("✅ **Status**: Trained and Ready")
+                st.info(f"🤖 **Model Type**: {current_model}")
                 st.info(f"🌌 **Latent Dimensions**: {st.session_state.get('latent_dim', 100)}")
-                st.info("🏗️ **Architecture**: Lightweight CNN with Upsampling")
+                
+                if current_model == "Simple GAN":
+                    st.info("🏗️ **Architecture**: Lightweight CNN with Upsampling")
+                else:
+                    st.info("🏗️ **Architecture**: DCGAN with ConvTranspose2d")
                 
             with col_info2:
                 st.markdown("#### 🕵️ **Discriminator Network**") 
                 st.success("✅ **Status**: Trained and Ready")
                 st.info("🔍 **Purpose**: Real vs Fake Image Classification")
-                st.info("🏗️ **Architecture**: Convolutional Classifier")
+                
+                if current_model == "Simple GAN":
+                    st.info("🏗️ **Architecture**: Convolutional Classifier")
+                else:
+                    st.info("🏗️ **Architecture**: WGAN-GP Critic")
+                    st.info("⚖️ **Loss**: Wasserstein + Gradient Penalty")
                 
         else:
             st.info("📊 **Model information will appear here after training**")
@@ -592,7 +890,17 @@ def main():
         with tech_col2:  
             st.metric("💾 **Memory Optimized**", "4GB")
         with tech_col3:
-            st.metric("⚡ **Architecture**", "Simple GAN")
+            current_arch = st.session_state.get('model_type', 'Not Selected')
+            st.metric("⚡ **Architecture**", current_arch)
+        
+        # Model comparison table
+        st.markdown("#### 📈 **Model Comparison**")
+        comparison_data = {
+            "Feature": ["Training Speed", "Image Quality", "Memory Usage", "Stability", "Data Augmentation"],
+            "Simple GAN": ["⚡ Fast", "🟡 Good", "💚 Low", "🟡 Moderate", "❌ None"],
+            "DCGAN-WGAN": ["🐌 Slower", "💚 Excellent", "🟡 Higher", "💚 Very Stable", "✅ Heavy"]
+        }
+        st.table(comparison_data)
     
     # Bottom section with cleanup
     st.markdown("---")
@@ -601,7 +909,7 @@ def main():
     with col_clean2:
         if st.button("🧹 **Clear Memory**", help="Clear GPU/CPU memory and reset app state", use_container_width=True):
             # Clear specific keys
-            for key in ['generator', 'discriminator', 'trained', 'latent_dim']:
+            for key in ['generator', 'discriminator', 'trained', 'latent_dim', 'model_type']:
                 if key in st.session_state:
                     del st.session_state[key]
             
@@ -611,18 +919,22 @@ def main():
             gc.collect()
             
             st.success("🧹 Memory cleared and state reset!")
-            # Removed st.rerun() to prevent app restart
     
     with col_clean3:
         if st.button("ℹ️ **About**", use_container_width=True):
             st.info("""
             🎨 **AI Art Generator Studio**
             
-            A lightweight GAN training application optimized for:
-            • 💾 4GB memory systems
-            • 🚀 Fast training cycles  
+            A comprehensive GAN training application featuring:
+            • 💾 4GB memory optimization
+            • 🚀 Multiple model architectures
             • 🎯 High-quality results
             • 🖼️ Custom image datasets
+            • 📊 Advanced training techniques
+            
+            **Models Available:**
+            • Simple GAN: Fast training, good for beginners
+            • DCGAN-WGAN: Advanced architecture with better quality
             """)
 
 if __name__ == "__main__":
