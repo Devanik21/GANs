@@ -857,7 +857,7 @@ def main():
         st.info("💡 **Pro Tip**: DCGAN-WGAN works better with fewer images!")
         
         # MODEL SELECTION DROPDOWN
-        st.markdown("#### 🤖 **Model Architecture**")
+        st.markdown("#### 🦄 **Model Architecture**")
         model_type = st.selectbox(
             "🧠 Choose GAN Model",
             ["Simple GAN", "DCGAN-WGAN"],
@@ -957,7 +957,7 @@ def main():
                     st.warning("⚠️ **High memory usage!** Consider reducing image size or batch size.")
                 
                 # Display selected model info
-                st.info(f"🤖 **Selected Model**: {model_type}")
+                st.info(f"🦄 **Selected Model**: {model_type}")
                 
                 # Big colorful training button
                 if st.button("🖼️ **START TRAINING**", type="primary", use_container_width=True):
@@ -1032,7 +1032,7 @@ def main():
                 
                 # Display current model info
                 current_model = st.session_state.get('model_type', 'Unknown')
-                st.info(f"🤖 **Current Model**: {current_model}")
+                st.info(f"🦄 **Current Model**: {current_model}")
                 
                 # Big generation button
                 if st.button("🎨 **GENERATE ART**", type="primary", use_container_width=True):
@@ -1066,7 +1066,7 @@ def main():
             - 🎨 **Infinite variations** with different random seeds  
             - 📊 **Batch generation** of multiple images at once
             - 🎭 **Style consistency** learned from your uploaded images
-            - 🤖 **Choice of model architectures** for different quality levels
+            - 🦄 **Choice of model architectures** for different quality levels
             """)
     
     with tab3:
@@ -1080,7 +1080,7 @@ def main():
             with col_info1:
                 st.markdown("#### 🧠 **Generator Network**")
                 st.success("✅ **Status**: Trained and Ready")
-                st.info(f"🤖 **Model Type**: {current_model}")
+                st.info(f"🦄 **Model Type**: {current_model}")
                 st.info(f"🌌 **Latent Dimensions**: {st.session_state.get('latent_dim', 100)}")
                 
                 if current_model == "Simple GAN":
