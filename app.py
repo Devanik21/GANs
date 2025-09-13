@@ -114,37 +114,88 @@ class SimpleDiscriminator(nn.Module):
         return validity
 
 # ===================== DCGAN MODELS =====================
+# ===================== DCGAN MODELS (DYNAMIC & IMPROVED) =====================
 class Generator(nn.Module):
-    """Powerful DCGAN-style generator"""
-    def __init__(self, latent_dim=100, img_channels=3, feature_maps=64):
+    """Powerful and FLEXIBLE DCGAN-style generator"""
+    def __init__(self, latent_dim=100, img_channels=3, img_size=64, feature_maps=64):
         super().__init__()
-        self.main = nn.Sequential(
-            # Input: Z (latent vector)
-            nn.ConvTranspose2d(latent_dim, feature_maps * 8, 4, 1, 0, bias=False),
-            nn.BatchNorm2d(feature_maps * 8),
-            nn.ReLU(True),
-            # State size: (feature_maps*8) x 4 x 4
-            nn.ConvTranspose2d(feature_maps * 8, feature_maps * 4, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(feature_maps * 4),
-            nn.ReLU(True),
-            # State size: (feature_maps*4) x 8 x 8
-            nn.ConvTranspose2d(feature_maps * 4, feature_maps * 2, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(feature_maps * 2),
-            nn.ReLU(True),
-            # State size: (feature_maps*2) x 16 x 16
-            nn.ConvTranspose2d(feature_maps * 2, feature_maps, 4, 2, 1, bias=False),
-            nn.BatchNorm2d(feature_maps),
-            nn.ReLU(True),
-            # State size: (feature_maps) x 32 x 32
-            nn.ConvTranspose2d(feature_maps, img_channels, 4, 2, 1, bias=False),
+        
+        # Calculate the number of upsampling blocks needed to go from 4x4 to img_size
+        num_blocks = int(np.log2(img_size) - 2)
+        if num_blocks < 1:
+            raise ValueError(f"Image size {img_size} is too small for this DCGAN architecture. Minimum is 8.")
+
+        layers = []
+        
+        # Initial layer: from latent_dim to a 4x4 feature map
+        out_features = feature_maps * (2 ** (num_blocks - 1))
+        layers.extend([
+            nn.ConvTranspose2d(latent_dim, out_features, 4, 1, 0, bias=False),
+            nn.BatchNorm2d(out_features),
+            nn.ReLU(True)
+        ])
+        
+        # Upsampling blocks
+        for i in range(num_blocks - 1):
+            in_features = out_features
+            out_features = in_features // 2
+            layers.extend([
+                nn.ConvTranspose2d(in_features, out_features, 4, 2, 1, bias=False),
+                nn.BatchNorm2d(out_features),
+                nn.ReLU(True)
+            ])
+            
+        # Final layer: to img_size and target channels
+        layers.extend([
+            nn.ConvTranspose2d(out_features, img_channels, 4, 2, 1, bias=False),
             nn.Tanh()
-            # Final state size: (img_channels) x 64 x 64
-        )
+        ])
+        
+        self.main = nn.Sequential(*layers)
 
     def forward(self, z):
         # Reshape z from (batch, latent_dim) to (batch, latent_dim, 1, 1)
         z = z.view(z.shape[0], -1, 1, 1)
         return self.main(z)
+
+class Discriminator(nn.Module):
+    """Powerful and FLEXIBLE DCGAN-style discriminator (Critic)"""
+    def __init__(self, img_channels=3, img_size=64, feature_maps=64):
+        super().__init__()
+        
+        # Calculate the number of downsampling blocks
+        num_blocks = int(np.log2(img_size) - 2)
+        if num_blocks < 1:
+            raise ValueError(f"Image size {img_size} is too small for this DCGAN architecture. Minimum is 8.")
+
+        layers = []
+        
+        # Initial layer
+        layers.extend([
+            nn.Conv2d(img_channels, feature_maps, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True)
+        ])
+        
+        in_features = feature_maps
+        # Downsampling blocks
+        for i in range(num_blocks - 1):
+            out_features = in_features * 2
+            layers.extend([
+                nn.Conv2d(in_features, out_features, 4, 2, 1, bias=False),
+                nn.InstanceNorm2d(out_features, affine=True),
+                nn.LeakyReLU(0.2, inplace=True)
+            ])
+            in_features = out_features
+            
+        # Final layer: downsample to a 1x1 feature map (a single score)
+        layers.extend([
+            nn.Conv2d(in_features, 1, 4, 1, 0, bias=False)
+        ])
+        
+        self.main = nn.Sequential(*layers)
+
+    def forward(self, img):
+        return self.main(img)
 
 class Discriminator(nn.Module):
     """Powerful DCGAN-style discriminator (Critic)"""
@@ -428,11 +479,10 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
         st.error(f"🚫 Cannot start training. The number of valid images ({len(dataset)}) is less than the batch size ({batch_size}). Please upload more images or reduce the batch size.")
         return None, None, [], []
 
-    # 2. UPDATED MODEL INITIALIZATION
-    # Using the new Generator and Discriminator classes
-    # Use fixed feature_maps=64 regardless of img_size to avoid tensor size mismatches
-    generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=64).to(device)
-    discriminator = Discriminator(img_channels=3, feature_maps=64).to(device)
+    # 2. UPDATED MODEL INITIALIZATION (PASSING IMG_SIZE)
+    # This now uses the flexible models which adapt to the image size
+    generator = Generator(latent_dim=latent_dim, img_channels=3, img_size=img_size, feature_maps=64).to(device)
+    discriminator = Discriminator(img_channels=3, img_size=img_size, feature_maps=64).to(device)
     
     # WGAN-GP parameters
     lambda_gp = 10
@@ -501,6 +551,7 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
                 optimizer_G.zero_grad()
                 
                 # Generate a batch of images
+                # Reuse the z from the critic step for efficiency
                 gen_imgs = generator(z)
                 
                 # Generator loss
