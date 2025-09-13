@@ -430,8 +430,9 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
 
     # 2. UPDATED MODEL INITIALIZATION
     # Using the new Generator and Discriminator classes
-    generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=img_size).to(device)
-    discriminator = Discriminator(img_channels=3, feature_maps=img_size).to(device)
+    # Use fixed feature_maps=64 regardless of img_size to avoid tensor size mismatches
+    generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=64).to(device)
+    discriminator = Discriminator(img_channels=3, feature_maps=64).to(device)
     
     # WGAN-GP parameters
     lambda_gp = 10
