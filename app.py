@@ -562,7 +562,8 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
     # 2. UPDATED MODEL INITIALIZATION (PASSING IMG_SIZE)
     # This now uses the flexible models which adapt to the image size
     generator = Generator(latent_dim=latent_dim, img_channels=3, img_size=img_size, feature_maps=64).to(device)
-    discriminator = SimpleDiscriminator(img_channels=3, img_size=img_size, feature_maps=64).to(device)
+     # Correct line
+    discriminator = Discriminator(img_channels=3, feature_maps=64).to(device)
     
     # WGAN-GP parameters
     lambda_gp = 10
