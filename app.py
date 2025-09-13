@@ -13,7 +13,7 @@ import os
 
 # Set page config with colorful theme
 st.set_page_config(
-    page_title="🎨 AI Art Generator - GAN Training Studio", 
+    page_title="AI Art Generator - GAN Training Studio", 
     layout="wide",
     initial_sidebar_state="expanded",
     page_icon="🎨"
@@ -482,7 +482,7 @@ def train_simple_gan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
     
     # Training progress containers with colorful headers
     st.markdown("### 🎯 Training Progress Dashboard")
-    progress_bar = st.progress(0, text="🚀 Starting training...")
+    progress_bar = st.progress(0, text="🖼️ Starting training...")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -642,7 +642,7 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
 
     # 2. UPDATED MODEL INITIALIZATION (PASSING IMG_SIZE)
     # This now uses the flexible models which adapt to the image size
-    st.info(f"🚀 Initializing DCGAN-WGAN model for {img_size}x{img_size} images...")
+    st.info(f"🖼️ Initializing DCGAN-WGAN model for {img_size}x{img_size} images...")
     if img_size == 64:
         generator = Generator(latent_dim=latent_dim, img_channels=3, feature_maps=64).to(device)
         discriminator = Discriminator(img_channels=3, feature_maps=64).to(device)
@@ -661,7 +661,7 @@ def train_dcgan_wgan(images, epochs=50, batch_size=4, lr=0.0002, latent_dim=100,
     optimizer_D = optim.Adam(discriminator.parameters(), lr=lr, betas=(0.5, 0.9))
     
     st.markdown("### 🎯 Training Progress Dashboard")
-    progress_bar = st.progress(0, text="🚀 Starting training...")
+    progress_bar = st.progress(0, text="🖼️ Starting training...")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -844,7 +844,7 @@ def main():
     st.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
         <h3 style="color: #666; font-weight: 300;">
-            ✨ Train powerful GANs on your images • 🚀 Multiple model architectures • 🎯 Professional results
+            ✨ Train powerful GANs on your images • 🖼️ Multiple model architectures • 🎯 Professional results
         </h3>
     </div>
     """, unsafe_allow_html=True)
@@ -892,7 +892,7 @@ def main():
             st.success("✅ **Memory**: Settings look good!")
         
         # Device info with colors
-        device_emoji = "🚀" if device.type == "cuda" else "💻"
+        device_emoji = "🖼️" if device.type == "cuda" else "💻"
         st.info(f"{device_emoji} **Device**: {device.type.upper()}")
     
     # Main interface with tabs
@@ -938,7 +938,7 @@ def main():
                             cols[i].error(f"❌ Error: {file.name}")
         
         with col2:
-            st.markdown("### 🚀 **Start Training**")
+            st.markdown("### 🖼️ **Start Training**")
             
             if not uploaded_files:
                 st.info("👆 **Upload images first** to start training your AI!")
@@ -960,7 +960,7 @@ def main():
                 st.info(f"🤖 **Selected Model**: {model_type}")
                 
                 # Big colorful training button
-                if st.button("🚀 **START TRAINING**", type="primary", use_container_width=True):
+                if st.button("🖼️ **START TRAINING**", type="primary", use_container_width=True):
                     if len(uploaded_files) < 1:
                         st.error("🚫 Please upload at least 1 image")
                         return
@@ -1147,7 +1147,7 @@ def main():
             
             A comprehensive GAN training application featuring:
             • 💾 4GB memory optimization
-            • 🚀 Multiple model architectures
+            • 🖼️ Multiple model architectures
             • 🎯 High-quality results
             • 🖼️ Custom image datasets
             • 📊 Advanced training techniques
