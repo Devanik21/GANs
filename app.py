@@ -1118,16 +1118,30 @@ def main():
         saved_models = db.all()
         model_names = [model['name'] for model in saved_models]
 
+        # This `if` statement now checks if there are NO saved models AND a model has NOT been trained in the current session.
+        # This replaces the old `else` block's functionality.
         if not model_names and not st.session_state.get('trained', False):
             st.info("👈 **Train and save your first AI model** in the 'Upload & Train' tab to start generating art!")
+            
+            # Show some example placeholder
+            st.markdown("#### 🌟 **What you'll be able to create:**")
+            st.markdown("""
+            - 🖼️ **Unique AI-generated images** based on your training data
+            - 🎨 **Infinite variations** with different random seeds  
+            - 📊 **Batch generation** of multiple images at once
+            - 🎭 **Style consistency** learned from your uploaded images
+            - 🦄 **Choice of model architectures** for different quality levels
+            """)
         else:
+            # This part runs if you HAVE saved models or just finished training one.
             col_gen1, col_gen2 = st.columns([1, 2], gap="large")
             
             with col_gen1:
                 st.markdown("#### 🧠 **Select Your AI Artist**")
 
-                # Option to use the model just trained
+                # Create a list of model choices for the dropdown
                 display_names = list(model_names)
+                # Add the currently trained model as the first option if it exists
                 if st.session_state.get('trained', False):
                     display_names.insert(0, "✨ Most Recently Trained Model")
 
@@ -1140,14 +1154,14 @@ def main():
                     generator_to_use = None
                     model_info = {}
 
-                    # Logic to select which generator to use
+                    # Logic to decide which generator to use
                     if selected_model_name == "✨ Most Recently Trained Model":
                         st.info("Using the model you just trained in this session.")
                         generator_to_use = st.session_state.get('generator')
                         model_info['latent_dim'] = st.session_state.get('latent_dim')
                         model_info['model_type'] = st.session_state.get('model_type')
                     else:
-                        # Load the selected model from DB
+                        # Load the selected model from the database
                         generator_to_use, model_info = load_model_from_db(selected_model_name)
 
                     if generator_to_use and model_info:
@@ -1179,19 +1193,6 @@ def main():
             
             with col_gen2:
                 st.info("🎭 **Generated images will appear here** after you click the generate button!")
-        else:
-            st.markdown("### 🎨 **Art Generation Studio**")
-            st.info("👈 **Train your AI first** in the Upload & Train tab to unlock the art generation magic!")
-            
-            # Show some example placeholder
-            st.markdown("#### 🌟 **What you'll be able to create:**")
-            st.markdown("""
-            - 🖼️ **Unique AI-generated images** based on your training data
-            - 🎨 **Infinite variations** with different random seeds  
-            - 📊 **Batch generation** of multiple images at once
-            - 🎭 **Style consistency** learned from your uploaded images
-            - 🦄 **Choice of model architectures** for different quality levels
-            """)
     
     with tab3:
         st.markdown("### 📊 **Model Architecture & Info**")
