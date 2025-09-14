@@ -4,3 +4,4 @@ torchvision
 matplotlib
 pillow 
 numpy
+tinydb
