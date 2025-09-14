@@ -10,6 +10,10 @@ import io
 import matplotlib.pyplot as plt
 import gc
 import os
+# Add these imports at the top of your file
+from tinydb import TinyDB, Query
+import base64
+import datetime
 
 # Set page config with colorful theme
 st.set_page_config(
@@ -40,6 +44,9 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+
+
 
 # Device configuration for memory efficiency
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -835,6 +842,81 @@ def generate_images(generator, num_images=8, latent_dim=100, is_simple=False):
         plt.tight_layout()
         return fig
 
+
+# ===================== DATABASE SETUP =====================
+# Initialize TinyDB. This will create a db.json file in the same directory.
+db = TinyDB('models_db.json')
+
+def save_model_to_db(name, generator, model_type, latent_dim, img_size):
+    """Saves a model's state_dict and metadata to TinyDB."""
+    st.info(f"💾 Saving model '{name}' to database...")
+    
+    # Save model state_dict to an in-memory buffer
+    buffer = io.BytesIO()
+    torch.save(generator.state_dict(), buffer)
+    buffer.seek(0)
+    
+    # Encode the binary data to a base64 string
+    model_b64 = base64.b64encode(buffer.read()).decode('utf-8')
+    
+    # Create the document to insert into TinyDB
+    model_doc = {
+        "name": name,
+        "model_type": model_type,
+        "latent_dim": latent_dim,
+        "img_size": img_size,
+        "timestamp": str(datetime.datetime.now()),
+        "state_dict_b64": model_b64
+    }
+    
+    # Insert or update the model by name
+    ModelQuery = Query()
+    db.upsert(model_doc, ModelQuery.name == name)
+    st.success(f"✅ Model '{name}' saved successfully!")
+
+
+def load_model_from_db(name):
+    """Loads a model's state_dict from TinyDB and reconstructs the model."""
+    st.info(f"🔍 Loading model '{name}' from database...")
+    
+    # Find the model document
+    ModelQuery = Query()
+    model_doc = db.get(ModelQuery.name == name)
+    
+    if not model_doc:
+        st.error(f"Model '{name}' not found in the database.")
+        return None, None
+
+    # Get metadata
+    model_type = model_doc['model_type']
+    latent_dim = model_doc['latent_dim']
+    img_size = model_doc['img_size']
+    
+    # Instantiate the correct model architecture
+    if model_type == 'Simple GAN':
+        generator = SimpleGenerator(latent_dim=latent_dim, img_size=img_size).to(device)
+    elif model_type == 'DCGAN-WGAN':
+        if img_size == 128:
+            generator = Generator128(latent_dim=latent_dim).to(device)
+        else: # Default to 64px DCGAN
+            generator = Generator(latent_dim=latent_dim).to(device)
+    else:
+        st.error(f"Unknown model type: {model_type}")
+        return None, None
+        
+    # Decode the base64 string back to binary data
+    model_b64 = model_doc['state_dict_b64']
+    model_bytes = base64.b64decode(model_b64.encode('utf-8'))
+    
+    # Load the state_dict from the in-memory buffer
+    buffer = io.BytesIO(model_bytes)
+    generator.load_state_dict(torch.load(buffer, map_location=device))
+    
+    st.success(f"✅ Model '{name}' loaded and ready!")
+    return generator, model_doc
+
+
+
 # Streamlit UI
 def main():
     # Colorful animated title
@@ -1004,6 +1086,22 @@ def main():
                                 st.metric(loss_label, f"{d_losses[-1]:.4f}")
                             with col_summary2:
                                 st.metric("🎨 **Final G-Loss**", f"{g_losses[-1]:.4f}")
+                                # === NEW: UI TO SAVE THE MODEL ===
+                            st.markdown("---")
+                            st.markdown("### 💾 **Save Your Trained Model**")
+                            model_name = st.text_input("Enter a name for your model (e.g., 'Abstract Art v1')")
+                            if st.button("💾 **SAVE MODEL TO DATABASE**", use_container_width=True):
+                                if model_name:
+                                    save_model_to_db(
+                                        name=model_name,
+                                        generator=generator,
+                                        model_type=model_type,
+                                        latent_dim=latent_dim,
+                                        img_size=img_size
+                                    )
+                                else:
+                                     st.warning("⚠️ Please enter a name for the model before saving.")
+
                     
                     except RuntimeError as e:
                         if "out of memory" in str(e).lower():
@@ -1014,47 +1112,73 @@ def main():
                         st.error(f"⚡ Unexpected error: {e}")
     
     with tab2:
-        if st.session_state.get('trained', False):
-            st.markdown("### 🎨 **Generate Amazing Art**")
-            
+        st.markdown("### 🎨 **Generate Amazing Art**")
+        
+        # Get all saved models from the database
+        saved_models = db.all()
+        model_names = [model['name'] for model in saved_models]
+
+        if not model_names and not st.session_state.get('trained', False):
+            st.info("👈 **Train and save your first AI model** in the 'Upload & Train' tab to start generating art!")
+        else:
             col_gen1, col_gen2 = st.columns([1, 2], gap="large")
             
             with col_gen1:
-                st.markdown("#### 🎛️ **Generation Settings**")
-                num_generate = st.slider("🖼️ **Number of images**", 1, 16, 8,
-                                        help="How many masterpieces to create")
-                
-                st.markdown("#### 🎲 **Random Seed**")
-                use_seed = st.checkbox("🔒 **Use fixed seed**", help="For reproducible results")
-                if use_seed:
-                    seed_value = st.number_input("🌱 **Seed value**", 0, 9999, 42)
-                    torch.manual_seed(seed_value)
-                
-                # Display current model info
-                current_model = st.session_state.get('model_type', 'Unknown')
-                st.info(f"🦄 **Current Model**: {current_model}")
-                
-                # Big generation button
-                if st.button("🎨 **GENERATE ART**", type="primary", use_container_width=True):
-                    with st.spinner("🎭 Your AI is painting masterpieces..."):
-                        try:
-                            is_simple = st.session_state.get('model_type', 'Simple GAN') == 'Simple GAN'
-                            fig = generate_images(
-                                st.session_state['generator'], 
-                                num_generate, 
-                                st.session_state['latent_dim'],
-                                is_simple=is_simple
-                            )
-                            with col_gen2:
-                                st.pyplot(fig)
-                                st.success("🎉 **Fresh art created!** Save any you like!")
-                            plt.close(fig)
-                        except Exception as e:
-                            st.error(f"🎨 Generation error: {e}")
+                st.markdown("#### 🧠 **Select Your AI Artist**")
+
+                # Option to use the model just trained
+                display_names = list(model_names)
+                if st.session_state.get('trained', False):
+                    display_names.insert(0, "✨ Most Recently Trained Model")
+
+                selected_model_name = st.selectbox(
+                    "Choose a model to use for generation:",
+                    options=display_names
+                )
+
+                if selected_model_name:
+                    generator_to_use = None
+                    model_info = {}
+
+                    # Logic to select which generator to use
+                    if selected_model_name == "✨ Most Recently Trained Model":
+                        st.info("Using the model you just trained in this session.")
+                        generator_to_use = st.session_state.get('generator')
+                        model_info['latent_dim'] = st.session_state.get('latent_dim')
+                        model_info['model_type'] = st.session_state.get('model_type')
+                    else:
+                        # Load the selected model from DB
+                        generator_to_use, model_info = load_model_from_db(selected_model_name)
+
+                    if generator_to_use and model_info:
+                        st.markdown("#### 🎛️ **Generation Settings**")
+                        num_generate = st.slider("🖼️ **Number of images**", 1, 16, 8)
+                        
+                        st.markdown("#### 🎲 **Random Seed**")
+                        use_seed = st.checkbox("🔒 **Use fixed seed**", help="For reproducible results")
+                        if use_seed:
+                            seed_value = st.number_input("🌱 **Seed value**", 0, 9999, 42)
+                            torch.manual_seed(seed_value)
+                        
+                        if st.button("🎨 **GENERATE ART**", type="primary", use_container_width=True):
+                            with st.spinner("🎭 Your AI is painting masterpieces..."):
+                                try:
+                                    is_simple = model_info.get('model_type', 'Simple GAN') == 'Simple GAN'
+                                    fig = generate_images(
+                                        generator_to_use, 
+                                        num_generate, 
+                                        model_info.get('latent_dim', 100),
+                                        is_simple=is_simple
+                                    )
+                                    with col_gen2:
+                                        st.pyplot(fig)
+                                        st.success("🎉 **Fresh art created!**")
+                                    plt.close(fig)
+                                except Exception as e:
+                                    st.error(f"🎨 Generation error: {e}")
             
             with col_gen2:
-                if 'generator' not in st.session_state:
-                    st.info("🎭 **Generated images will appear here** after clicking the generate button!")
+                st.info("🎭 **Generated images will appear here** after you click the generate button!")
         else:
             st.markdown("### 🎨 **Art Generation Studio**")
             st.info("👈 **Train your AI first** in the Upload & Train tab to unlock the art generation magic!")
