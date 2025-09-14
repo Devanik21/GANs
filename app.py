@@ -1086,22 +1086,6 @@ def main():
                                 st.metric(loss_label, f"{d_losses[-1]:.4f}")
                             with col_summary2:
                                 st.metric("🎨 **Final G-Loss**", f"{g_losses[-1]:.4f}")
-                                # === NEW: UI TO SAVE THE MODEL ===
-                            st.markdown("---")
-                            st.markdown("### 💾 **Save Your Trained Model**")
-                            model_name = st.text_input("Enter a name for your model (e.g., 'Abstract Art v1')")
-                            if st.button("💾 **SAVE MODEL TO DATABASE**", use_container_width=True):
-                                if model_name:
-                                    save_model_to_db(
-                                        name=model_name,
-                                        generator=generator,
-                                        model_type=model_type,
-                                        latent_dim=latent_dim,
-                                        img_size=img_size
-                                    )
-                                else:
-                                     st.warning("⚠️ Please enter a name for the model before saving.")
-
                     
                     except RuntimeError as e:
                         if "out of memory" in str(e).lower():
@@ -1110,6 +1094,24 @@ def main():
                             st.error(f"💥 Training error: {e}")
                     except Exception as e:
                         st.error(f"⚡ Unexpected error: {e}")
+        # This UI will now appear AFTER training is complete and will stay visible
+        if st.session_state.get('trained', False):
+            st.markdown("---")
+            st.markdown("### 💾 **Save Your Trained Model**")
+            model_name = st.text_input("Enter a name for your model (e.g., 'Abstract Art v1')")
+            if st.button("💾 **SAVE MODEL TO DATABASE**", use_container_width=True):
+                if model_name:
+                    # We grab the generator and parameters FROM session_state
+                    save_model_to_db(
+                        name=model_name,
+                        generator=st.session_state['generator'],
+                        model_type=st.session_state['model_type'],
+                        latent_dim=st.session_state['latent_dim'],
+                        img_size=img_size # img_size is still available from the sidebar
+                    )
+                else:
+                    st.warning("⚠️ Please enter a name for the model before saving.")
+    
     
     with tab2:
         st.markdown("### 🎨 **Generate Amazing Art**")
