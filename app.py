@@ -87,21 +87,20 @@ st.markdown("""
 
     .big-title {
         font-family: 'Press Start 2P', cursive !important;
-        font-size: 2.8rem !important;
-        /* Adjusted Gradient to match shooting stars (Magenta, Cyan, Gold) */
-        background: linear-gradient(to right, #ff33cc, #33ccff, #ffcc00);
+        font-size: 2.5rem !important;
+        /* Exact color match from pixel bg: Pink, Blue, Gold trail */
+        background: linear-gradient(to right, #ff44cc, #44ccff, #ffcc33);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 2rem !important;
         text-shadow: none !important; 
         filter: none !important; 
-        letter-spacing: -2px;
     }
 
-    /* Subtitle styling matching the light blue star highlights */
+    /* Clean subtle subtitle */
     .main-subtitle h3 {
-        color: #99ffff !important;
+        color: #f0f0f0 !important;
         text-shadow: none !important;
         font-weight: 300 !important;
     }
