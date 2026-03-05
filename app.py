@@ -96,13 +96,14 @@ st.markdown("""
     .big-title {
         font-size: 4rem !important;
         /* Static Rainbow Gradient */
-        background: linear-gradient(to right, #ff3333, #ffae33, #eeff33, #33ff44, #33ffff, #3333ff, #e233ff);
+        background: linear-gradient(to right, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 2.5rem !important;
         text-shadow: none !important;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); /* Very light lift */
+        filter: none !important;
+        -webkit-filter: none !important;
     }
 
     /* Contrast for inputs and widgets */
