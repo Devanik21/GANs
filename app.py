@@ -80,29 +80,35 @@ st.markdown("""
         box-shadow: none !important;
     }
     
-    /* Removed all text shadows entirely to avoid any dark/grey shading as requested */
-    p, span, label, div, li, h2, h3, h4, h5, h6 {
+    /* Global App-Wide Pixel Theme and White text color */
+    * {
+        font-family: 'Press Start 2P', cursive !important;
+        color: #ffffff !important;
+    }
+
+    /* Adjust font size for normal text - Pixel fonts are huge, so we scale them down */
+    p, span, label, li, .stText {
+        font-size: 0.65rem !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Subtitle scaling */
+    .main-subtitle h3 {
+        font-size: 0.8rem !important;
+        font-weight: 300 !important;
         text-shadow: none !important;
     }
 
+    /* Keep the Title special with the match-bg gradient */
     .big-title {
-        font-family: 'Press Start 2P', cursive !important;
-        font-size: 2.5rem !important;
-        /* Exact color match from pixel bg: Pink, Blue, Gold trail */
+        font-size: 2rem !important;
         background: linear-gradient(to right, #ff44cc, #44ccff, #ffcc33);
         -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        -webkit-text-fill-color: transparent !important; /* Must override global white */
         text-align: center;
         margin-bottom: 2rem !important;
         text-shadow: none !important; 
         filter: none !important; 
-    }
-
-    /* Clean subtle subtitle */
-    .main-subtitle h3 {
-        color: #f0f0f0 !important;
-        text-shadow: none !important;
-        font-weight: 300 !important;
     }
 
     /* Fully Transparent inputs */
@@ -1009,7 +1015,7 @@ def load_model_from_db(name):
 # Streamlit UI
 def main():
     # Colorful animated title
-    st.markdown('<h1 class="big-title">🎨 AI Art Generator Studio</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="big-title"> AI Art Generator Studio</h1>', unsafe_allow_html=True)
     
     # Colorful subtitle with gradient
     st.markdown("""
