@@ -1384,8 +1384,7 @@ def main():
             2. **The Discriminator ($D$):** A binary classifier trained to distinguish between real data (from the training set) and fake data (from the Generator).
             
             **The Minimax Objective:**
-            The training process is defined by the following value function $V(D, G)$:
-            $$\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{data}(x)}[\log D(x)] + \mathbb{E}_{z \sim p_z(z)}[\log(1 - D(G(z)))]$$
+            The training process is defined by a minimax value function. The Generator learns to produce samples that are indistinguishable from real data, while the Discriminator learns to maximize the probability of correctly identifying real vs. fake samples. This competitive cycle drives both networks to improve until the Generator produces high-fidelity results.
             """)
             
             st.markdown("### 🧪 **Wasserstein GAN (WGAN-GP)**")
