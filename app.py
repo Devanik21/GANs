@@ -14,6 +14,8 @@ import os
 from tinydb import TinyDB, Query
 import base64
 import datetime
+import matplotlib.pyplot as plt
+
 
 # Set page config with colorful theme
 st.set_page_config(
