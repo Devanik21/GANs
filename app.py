@@ -1348,15 +1348,17 @@ def main():
         if blur_bg:
             st.markdown("""
             <style>
-                .stApp::before {
-                    content: "";
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100vw;
-                    height: 100vh;
-                    backdrop-filter: blur(8px);
-                    z-index: -1;
+                /* Blur the main container, header, and sidebar to affect the background underneath */
+                [data-testid="stAppViewContainer"], 
+                [data-testid="stSidebar"], 
+                [data-testid="stHeader"] {
+                    backdrop-filter: blur(10px) !important;
+                    -webkit-backdrop-filter: blur(10px) !important;
+                }
+                
+                /* Ensure children of sidebar don't double-blur */
+                [data-testid="stSidebar"] > div:first-child {
+                    backdrop-filter: none !important;
                 }
             </style>
             """, unsafe_allow_html=True)
