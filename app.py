@@ -58,11 +58,11 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Dreamy, translucent sidebar - Subtle Blur + Soft Tint */
+    /* Dreamy, translucent sidebar - Reduced Blur to see pixels */
     [data-testid="stSidebar"] {
         background-color: rgba(20, 20, 45, 0.4) !important;
-        backdrop-filter: blur(12px) saturate(180%);
-        -webkit-backdrop-filter: blur(12px) saturate(180%);
+        backdrop-filter: blur(4px) saturate(180%);
+        -webkit-backdrop-filter: blur(4px) saturate(180%);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
     
@@ -71,11 +71,11 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Main block container - The Glass Pane */
+    /* Main block container - The Glass Pane - Reduced Blur to see pixels */
     .block-container {
         background-color: rgba(20, 20, 45, 0.35) !important;
-        backdrop-filter: blur(10px) saturate(150%);
-        -webkit-backdrop-filter: blur(10px) saturate(150%);
+        backdrop-filter: blur(4px) saturate(150%);
+        -webkit-backdrop-filter: blur(4px) saturate(150%);
         border-radius: 20px;
         padding: 2.5rem 3.5rem !important;
         border: 1px solid rgba(255, 255, 255, 0.1);
