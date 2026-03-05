@@ -58,10 +58,10 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Dreamy, translucent sidebar - Increased Opacity for Readability */
+    /* Dreamy, translucent sidebar - Lighter for less "grey" feel */
     [data-testid="stSidebar"] {
-        background-color: rgba(10, 10, 20, 0.85) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: rgba(10, 10, 20, 0.4) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     /* Sidebar inner content background reset */
@@ -69,18 +69,13 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Main block container glassmorphism panel - Increased Opacity for Contrast */
+    /* Main block container glassmorphism panel - Higher Transparency */
     .block-container {
-        background-color: rgba(10, 10, 20, 0.8) !important;
+        background-color: rgba(10, 10, 20, 0.3) !important;
         border-radius: 20px;
         padding: 2.5rem 3.5rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
-    }
-
-    /* CRITICAL: Add Text Shadows to EVERYTHING for readability */
-    p, span, label, div, li, h1, h2, h3, h4, h5, h6 {
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 1), 0px 0px 10px rgba(0, 0, 0, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     }
 
     .big-title {
@@ -91,8 +86,9 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 2.5rem !important;
-        text-shadow: none !important; /* No shadow on the title itself */
-        filter: none !important; /* Explicitly remove the dark shade/dropshadow */
+        text-shadow: none !important;
+        filter: none !important;
+        -webkit-filter: none !important;
     }
 
     /* Contrast for inputs and widgets */
