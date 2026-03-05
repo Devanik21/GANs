@@ -1370,6 +1370,51 @@ def main():
             • DCGAN-WGAN: Advanced architecture with better quality
             """)
 
+    # --- NEW THEORY & MATH SECTION ---
+    st.markdown("---")
+    with st.expander("📚 **AI Theory & Deep Learning Deep-Dive**", expanded=False):
+        t_col1, t_col2 = st.columns([1, 1], gap="medium")
+        
+        with t_col1:
+            st.markdown("### 🧬 **The Architecture of GANs**")
+            st.markdown("""
+            Generative Adversarial Networks (GANs), introduced by Ian Goodfellow in 2014, consist of two neural networks competing in a zero-sum game:
+            
+            1. **The Generator ($G$):** Tries to map a latent noise vector $z$ from a prior distribution (usually Gaussian) to the data space $G(z)$. Its goal is to maximize the probability of the Discriminator making a mistake.
+            2. **The Discriminator ($D$):** A binary classifier trained to distinguish between real data (from the training set) and fake data (from the Generator).
+            
+            **The Minimax Objective:**
+            The training process is defined by the following value function $V(D, G)$:
+            $$\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{data}(x)}[\log D(x)] + \mathbb{E}_{z \sim p_z(z)}[\log(1 - D(G(z)))]$$
+            """)
+            
+            st.markdown("### 🧪 **Wasserstein GAN (WGAN-GP)**")
+            st.markdown("""
+            Standard GANs often suffer from **Mode Collapse** and **Vanishing Gradients**. This app implements **WGAN with Gradient Penalty**, which uses the Earth Mover's (Wasserstein-1) distance:
+            
+            - **Critic Loss:** $L = \mathbb{E}_{\tilde{x} \sim P_g}[D(\tilde{x})] - \mathbb{E}_{x \sim P_r}[D(x)] + \lambda \mathbb{E}_{\hat{x} \sim P_{\hat{x}}}[(||\nabla_{\hat{x}} D(\hat{x})||_2 - 1)^2]$
+            - The Gradient Penalty term (the L2 norm of the gradient) enforces the **1-Lipschitz continuity** constraint, leading to much more stable training.
+            """)
+
+        with t_col2:
+            st.markdown("### 🔢 **Technical Implementation Details**")
+            st.markdown("""
+            **Latent Space ($Z$):**
+            A $100$-dimensional vector space. Each dimension represents a learned feature. By interpolating through this space, we can smoothly transform one generated image into another.
+            
+            **Convolutional Dynamics:**
+            - **Up-sampling:** Uses `ConvTranspose2d` (Fractionally-strided convolutions) to learn the mapping from a 1x1 vector to a 64x64 or 128x128 feature map.
+            - **Normalization:** `BatchNorm2d` is used in the Generator to prevent the internal covariate shift, while `InstanceNorm2d` is used in the WGAN Discriminator to comply with Gradient Penalty requirements.
+            
+            **Optimization Algorithms:**
+            - **Adam Optimizer:** Uses adaptive moment estimation.
+            - **Hyperparameters:** $\alpha = 0.0002$, $\beta_1 = 0.5$, $\beta_2 = 0.999$. These specific values were found by the DCGAN authors to be stable for high-resolution synthesis.
+            """)
+            
+            st.info("""
+            🔬 **Memory Optimization**: This app uses `Linear` to `Conv2d` projection instead of heavy fully connected layers to stay within the **4GB VRAM** target while maintaining a high feature count in deep layers.
+            """)
+
 if __name__ == "__main__":
     # Initialize session state
     if 'trained' not in st.session_state:
