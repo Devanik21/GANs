@@ -1378,21 +1378,35 @@ def main():
         with t_col1:
             st.markdown("### 🧬 **I. The Adversarial Game & Nash Equilibrium**")
             st.markdown("""
-            Generative Adversarial Networks (GANs) represent a paradigm shift from traditional supervised learning to unsupervised density estimation via a competitive game. The training process is not a standard optimization toward a global minimum, but a search for a **Nash Equilibrium** in a zero-sum game between two neural networks.
+            Generative Adversarial Networks (GANs) represent a paradigm shift from traditional supervised learning to unsupervised density estimation via a competitive game. The training process is not a standard optimization toward a global minimum, but a search for a **Nash Equilibrium** in a zero-sum game between two neural networks. In this landscape, the loss surface is non-convex and highly dynamic, as the "target" for the Generator is constantly moving.
             
             **The Training Tension:**
             In the classic formulation by Ian Goodfellow (2014), the Generator (G) and Discriminator (D) engage in a minimax game. If D becomes too powerful too quickly, G's gradients "saturate" or vanish, and learning plateaus. Conversely, if G is too strong, it may exploit specific mathematical weaknesses in D rather than learning the generalized data distribution. This implementation uses Non-Saturating Loss heuristics and Wasserstein metrics to ensure that G always has a "signal" to follow, even when D is highly accurate.
+            
+            **Game Theory Dynamics:**
+            The convergence in GANs is often oscillatory. Because one network's gain is the other's loss, they can end up chasing each other in circles in the parameter space (known as limit cycles). We stabilize this using Adam's second-order momentum and low beta-1 values to "dampen" these oscillations, ensuring the networks settle into a stable state where the generated art mirrors the training data's underlying probability distribution.
             """)
             
             st.markdown("### 🌌 **II. Latent Space Manifolds & Disentanglement**")
             st.markdown("""
-            The latent noise vector (z) is the "seed" for a **non-linear manifold traversal**. The Generator learns to map a simple distribution (usually a 100-dimensional Gaussian) to the complex, high-dimensional space of natural image pixels.
+            The latent noise vector (z) is the "seed" for a **non-linear manifold traversal**. The Generator learns to map a simple distribution (usually a 100-dimensional Gaussian) to the complex, high-dimensional space of natural image pixels. This mapping effectively "unfolds" the high-dimensional data manifold into a simpler, more navigable space.
             
             **Manifold Continuity:**
             In a well-trained GAN, the latent space is continuous. This means if you take two random points, A and B, in the 100D latent space and slowly interpolate between them, the resulting images will morph smoothly. In deep learning theory, this is known as **Latent Factor Disentanglement**—where individual dimensions of z start to correspond to independent features like "texture," "perspective," or "color palette," rather than being entangled in a noisy mess.
+            
+            **Vector Arithmetic in Latent Space:**
+            An amazing property of these manifolds is that you can perform "visual arithmetic." While not explicitly coded in this app, a perfectly disentangled latent space would allow you to take the vector for "Blue Sky," subtract the vector for "Daytime," and add the vector for "Night," resulting in a "Night Sky" generation. This demonstrates that the AI has internalised a structured understanding of visual concepts.
             """)
 
-            st.markdown("### ⚠️ **III. Mode Collapse & Diversity Metrics**")
+            st.markdown("### ⚡ **III. Activation Functions: LeakyReLU vs. ReLU**")
+            st.markdown("""
+            Standard ReLU (Rectified Linear Unit) functions are "killing" neurons. If a neuron's value drops below zero, its gradient becomes zero, and it never learns again—a phenomenon called the "Dying ReLU" problem.
+            
+            **The LeakyReLU Solution:**
+            To maintain the "dreamy" complexity of GAN art, we use **LeakyReLU** in the Discriminator with a leak slope of 0.2. This ensures that even when a neuron is inactive, it still passes a small gradient (0.2 * input). This "leak" is vital for the early stages of training when the Discriminator is seeing mostly noise; it allows almost all neurons to contribute to the initial gradient flow, helping the AI find the "rough sketch" of your images much faster than standard architectures.
+            """)
+
+            st.markdown("### ⚠️ **IV. Mode Collapse & Diversity Metrics**")
             st.markdown("""
             The most significant technical hurdle in GANs is **Mode Collapse**. This occurs when the Generator discovers a small subset of the training data (a "mode") that consistently fools the Discriminator. Instead of learning to generate the entire variety of your art, the Generator "collapses" and starts producing the exact same image (or a narrow set of variations) repeatedly.
             
@@ -1400,45 +1414,55 @@ def main():
             This app utilizes several techniques to combat this:
             - **Batch Normalization/Instance Normalization:** These layers help stabilize the internal covariate shift, preventing the networks from becoming "locked" into a single output mode.
             - **Heavy Data Augmentation:** By rotating and cropping images randomly, we force the Discriminator to be more generalized, which in turn forces the Generator to be more diverse to succeed.
+            - **Mini-batch Discrimination:** While technically complex, the idea is to let the Discriminator look at a whole batch of images at once. If every image in G's batch looks identical, D can penalize G for lack of diversity, forcing it to branch out into new artistic styles.
             """)
 
-            st.markdown("### 📏 **IV. Earth Mover Theory & Wasserstein-1**")
+            st.markdown("### 📏 **V. Earth Mover Theory & Wasserstein-1**")
             st.markdown("""
-            Standard GANs use the Jensen-Shannon (JS) divergence as a loss function, which is mathematically "brittle" in high dimensions. If the Generator's distribution and the Real data distribution do not overlap significantly, the JS gradient becomes exactly zero, and training dies.
+            Standard GANs use the Jensen-Shannon (JS) divergence as a loss function, which is mathematically "brittle" in high dimensions. If the Generator's distribution and the Real data distribution do not overlap significantly, the JS gradient becomes exactly zero, and training dies. This is why early GANs were so difficult to tune.
             
             **The Earth Mover Advantage:**
-            WGAN-GP (Wasserstein GAN with Gradient Penalty) replaces JS divergence with the **Earth Mover's Distance**. Imagine the two probability distributions as piles of sand. The Wasserstein metric measures the minimum "work" required to transport the sand from one pile to match the shape of the other. Because this distance is continuous and differentiable almost everywhere, it provides the smooth, non-vanishing "Critic Loss" curves we see in the dashboard.
+            WGAN-GP (Wasserstein GAN with Gradient Penalty) replaces JS divergence with the **Earth Mover's Distance**. Imagine the two probability distributions as piles of sand. The Wasserstein metric measures the minimum "work" (mass * distance) required to transport the sand from one pile to match the shape of the other. Because this distance is continuous and differentiable almost everywhere, it provides the smooth, non-vanishing "Critic Loss" curves we see in the dashboard, even when the Generator is still producing total noise.
             """)
 
-            st.markdown("### 🧬 **V. Non-Saturating Gradient Flows**")
+        with t_col2:
+            st.markdown("### � **VI. Non-Saturating Gradient Flows**")
             st.markdown("""
-            A critical technical challenge in training "Adversarial" networks is ensuring the gradient signal never fully disappears. In the early stages, the Discriminator can easily distinguish between noise and art. If G minimizes the probability of D being correct, the gradient "saturates" near zero.
+            A critical technical challenge in training "Adversarial" networks is ensuring the gradient signal never fully disappears. In the early stages, the Discriminator can easily distinguish between noise and art. If G minimizes the probability of D being correct, the gradient "saturates" (flattens out) near zero because D is too certain.
             
             **Practical Optimization:**
-            Instead, we use a "Non-Saturating" heuristic where G maximizes the probability of D being wrong. This leads to much larger gradients in the early "birth" phase of your AI's artistic career, allowing the general shapes and color palettes to emerge from the noise within the first 50-100 epochs.
+            Instead, we use a "Non-Saturating" heuristic where G maximizes the probability of D being wrong. This leads to much larger gradients in the early "birth" phase of your AI's artistic career. This ensures that the weights in the deep convolutional layers are updated with enough force to pull meaningful features out of the initial Gaussian noise distribution, preventing the "dead start" bug common in simpler GAN setups.
             """)
 
-            st.markdown("### 🏗️ **VI. Transposed Convolution Dynamics**")
+            st.markdown("### 🏗️ **VII. Transposed Convolution Dynamics**")
             st.markdown("""
-            The Generator works the opposite of an image classifier. Instead of "pooling" an image down to a single label, it uses **Fractionally-strided Convolutions** (Transposed Convolutions) to "expand" the 1x1 latent vector into a high-resolution pixel grid.
+            The Generator works the opposite of an image classifier. Instead of "pooling" an image down to a single label, it uses **Fractionally-strided Convolutions** (Transposed Convolutions) to "expand" the 1x1 latent vector into a high-resolution pixel grid. These are sometimes called "Deconvolutional" layers, though that term is technically a misnomer.
             
             **Checkerboard Artifact Prevention:**
-            Visible grid patterns or "checkerboard artifacts" are a common failure in GANs, caused by uneven overlapping of kernels during up-sampling. We mitigate this by using specific stride and kernel size ratios (typically 4x4 kernels with stride 2). This ensures that every pixel is recalculated with the same frequency by the neural "brush," resulting in the smooth, organic textures found in high-quality GAN outputs.
+            Visible grid patterns or "checkerboard artifacts" are a common failure in GANs, caused by uneven overlapping of kernels during up-sampling. We mitigate this by using specific stride and kernel size ratios (typically 4x4 kernels with stride 2). This ensures that every pixel is recalculated with the same frequency by the neural "brush," resulting in the smooth, organic textures found in high-quality GAN outputs rather than the mechanical "window-pane" effect.
             """)
 
-            st.markdown("### ⚖️ **VII. Lipschitz Continuity & Penalty**")
+            st.markdown("### ⚖️ **VIII. Lipschitz Continuity & Penalty**")
             st.markdown("""
-            For the Wasserstein loss to remain valid, the Critic network must be an **"almost everywhere" differentiable 1-Lipschitz function**. Early WGANs tried to enforce this by "Weight Clipping," which severely limited the network's capacity and caused its weights to explode or vanish.
+            For the Wasserstein loss to remain valid, the Critic network must be an **"almost everywhere" differentiable 1-Lipschitz function**. This means the slope of the Critic's output can never exceed 1. Early WGANs tried to enforce this by "Weight Clipping," which severely limited the network's capacity and caused its weights to explode or vanish as they were forced into a tiny range.
             
-            **Gradient Penalty (GP):**
-            We solve this using the modern **Gradient Penalty** approach. We create a "random interpolate" image (a mix of real and fake pixels) and add a penalty to the loss if the gradient norm of the Critic at that point is anything other than 1. This forces the Critic to be a "fair judge" and prevents it from becoming an overly harsh critic that prevents the Generator from learning.
+            **Gradient Penalty (GP) Mechanics:**
+            We solve this using the modern **Gradient Penalty** approach. We create a "random interpolate" image (a mix of real and fake pixels) and add a penalty to the loss if the gradient norm of the Critic at that point is anything other than 1. This "soft" constraint allows the weights to take any value they need to learn complex artistic features while still maintaining the mathematical stability required for the Earth Mover distance to be calculated correctly.
             """)
 
-            st.markdown("### ♾️ **VIII. Forward Pass Engineering**")
+            st.markdown("### 🧠 **IX. Weight Initialization & Kaiming Scaling**")
+            st.markdown("""
+            How you start the network matters as much as how you train it. If the initial weights are too large, the activations explode; if too small, they vanish.
+            
+            **Mean-Zero Gaussian Init:**
+            We initialize our weights using a specialized Gaussian distribution with a mean of 0.0 and a standard deviation of 0.02. In the DCGAN research, this was found to be the "Goldilocks" zone for GAN stability. High-resolution art training is extremely sensitive to these initial conditions, as the adversarial game can be won or lost in the very first forward pass based on how much "signal" survives the journey through the deep convolutional layers.
+            """)
+
+            st.markdown("### 🚀 **X. Forward Pass Engineering**")
             st.markdown("""
             Behind the scenes, the training involves several advanced engineering choices:
-            - **Adam Optimizer Momentum:** Standard Stochastic Gradient Descent (SGD) is too rigid for GANs. We use **Adam**, which maintains a "weighted moving average" of past gradients, allowing the optimization to "glide" over noisy local minima.
-            - **Instance Normalization:** Unlike Batch Norm (which looks at many images at once), Instance Norm looks at each image individually. This has been technically shown to preserve stylistic features and avoid the "washed out" look found in many basic GANs.
+            - **Adam Optimizer Momentum:** Standard Stochastic Gradient Descent (SGD) is too rigid for GANs. We use **Adam**, which maintains a "weighted moving average" of past gradients (momentum), allowing the optimization to "glide" over noisy local minima and handle the high-variance loss surfaces of GANs.
+            - **Instance Normalization:** Unlike Batch Norm (which looks at many images at once), Instance Norm looks at each image individually. This has been technically shown to preserve stylistic features and avoid the "washed out" look found in many basic GANs, as it prevents the statistics of one image from "bleeding" into another during the training pass.
             - **Hyperparameter Stability:** We use fixed learning rates of 0.0002 and specific beta values ($\beta_1=0.5, \beta_2=0.999$) that have been empirically proven to provide the highest stability for Deep Convolutional GAN architectures.
             """)
             
