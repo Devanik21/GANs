@@ -46,10 +46,10 @@ def set_png_as_page_bg(bin_file):
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # Set the local background image
-if os.path.exists("Aesthetic.png"):
-    set_png_as_page_bg("Aesthetic.png")
+if os.path.exists("image.png"):
+    set_png_as_page_bg("image.png")
 
-# Custom CSS for magical, dreamy, transparent pixel aesthetic
+# Custom CSS for magical, dreamy, transparent pixel image
 st.markdown("""
 <style>
     /* Make the main containers and header totally transparent */
