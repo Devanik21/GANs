@@ -1065,54 +1065,51 @@ def main():
         # Device info with colors
         device_emoji = "🖼️" if device.type == "cuda" else "💻"
         st.info(f"{device_emoji} **Device**: {device.type.upper()}")
+        
+        st.markdown("---")
+        st.markdown("### 📤 **Upload Your Training Images**")
+        
+        # Styled file uploader
+        uploaded_files = st.file_uploader(
+            "🖼️ Choose your images (1-100)", 
+            type=['png', 'jpg', 'jpeg'], 
+            accept_multiple_files=True,
+            help="Upload 1-100 images to train your AI artist! 🎨"
+        )
+        
+        if uploaded_files:
+            num_files = len(uploaded_files)
+            if num_files > 100:
+                st.sidebar.error("🚫 **Too many files!** Please upload maximum 100 images")
+                return
+            
+            # Progress bar for file count
+            progress_percentage = min(num_files / 20, 1.0)  # Ideal around 20 images
+            st.sidebar.progress(progress_percentage, f"📈 Dataset completeness: {num_files}/20+ images")
+            
+            # Show sample images with better styling
+            if st.sidebar.checkbox("👀 **Preview uploaded images**", help="See what you're training on"):
+                st.sidebar.markdown("#### 🖼️ **Image Preview**")
+                num_previews = min(4, num_files)
+                for i, file in enumerate(uploaded_files[:num_previews]):
+                    try:
+                        img = Image.open(file)
+                        st.sidebar.image(img, caption=f"✨ Image {i+1}", use_container_width=True)
+                    except Exception as e:
+                        st.sidebar.error(f"❌ Error: {file.name}")
     
     # Main interface with tabs
     tab1, tab2, tab3 = st.tabs(["📤 **Upload & Train**", "🎨 **Generate Art**", "📊 **Model Info**"])
     
     with tab1:
-        col1, col2 = st.columns([1, 1], gap="large")
+        # Centered training control since upload is in the sidebar
+        _, center_col, _ = st.columns([1, 2, 1])
         
-        with col1:
-            st.markdown("### 📤 **Upload Your Training Images**")
-            
-            # Styled file uploader
-            uploaded_files = st.file_uploader(
-                "🖼️ Choose your images (1-100)", 
-                type=['png', 'jpg', 'jpeg'], 
-                accept_multiple_files=True,
-                help="Upload 1-100 images to train your AI artist! 🎨"
-            )
-            
-            if uploaded_files:
-                num_files = len(uploaded_files)
-                if num_files > 100:
-                    st.error("🚫 **Too many files!** Please upload maximum 100 images")
-                    return
-                
-                # Success message with colors
-                st.success(f"🎉 **Success!** {num_files} images ready for training")
-                
-                # Progress bar for file count
-                progress_percentage = min(num_files / 20, 1.0)  # Ideal around 20 images
-                st.progress(progress_percentage, f"📈 Dataset completeness: {num_files}/20+ images")
-                
-                # Show sample images with better styling
-                if st.checkbox("👀 **Preview uploaded images**", help="See what you're training on"):
-                    st.markdown("#### 🖼️ **Image Preview**")
-                    cols = st.columns(min(4, num_files))
-                    for i, file in enumerate(uploaded_files[:4]):
-                        try:
-                            img = Image.open(file)
-                            with cols[i]:
-                                st.image(img, caption=f"✨ Image {i+1}", use_container_width=True)
-                        except Exception as e:
-                            cols[i].error(f"❌ Error: {file.name}")
-        
-        with col2:
+        with center_col:
             st.markdown("### 🖼️ **Start Training**")
             
             if not uploaded_files:
-                st.info("👆 **Upload images first** to start training your AI!")
+                st.info("👆 **Upload images in the sidebar first** to start training your AI!")
             else:
                 # Memory estimation with colors
                 estimated_memory = (len(uploaded_files) * img_size * img_size * 3 * 4) / (1024**3)
