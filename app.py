@@ -1338,7 +1338,7 @@ def main():
         st.table(comparison_data)
 
     with tab4:
-        st.markdown("### 🌑 **Eye Friendly UI**")
+        st.markdown("### 👁️ **Eye Friendly UI**")
         st.info("Toggle the switch below to slightly blur the highly-detailed background image, making the text easier to read for extended periods.")
         
         # Checkbox to toggle blur and save space in session state
