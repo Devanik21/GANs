@@ -1022,7 +1022,7 @@ def main():
     
     # Sidebar with colorful styling
     with st.sidebar:
-        st.markdown("### 🎛️ **Training Control Panel**")
+        st.markdown("###  **Training Control Panel**")
         
         # Add some colorful info boxes
         st.info("💡 **Pro Tip**: DCGAN-WGAN works better with fewer images!")
