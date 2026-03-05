@@ -1426,7 +1426,7 @@ def main():
             """)
 
         with t_col2:
-            st.markdown("### � **VI. Non-Saturating Gradient Flows**")
+            st.markdown("### 🎨 **VI. Non-Saturating Gradient Flows**")
             st.markdown("""
             A critical technical challenge in training "Adversarial" networks is ensuring the gradient signal never fully disappears. In the early stages, the Discriminator can easily distinguish between noise and art. If G minimizes the probability of D being correct, the gradient "saturates" (flattens out) near zero because D is too certain.
             
@@ -1450,7 +1450,7 @@ def main():
             We solve this using the modern **Gradient Penalty** approach. We create a "random interpolate" image (a mix of real and fake pixels) and add a penalty to the loss if the gradient norm of the Critic at that point is anything other than 1. This "soft" constraint allows the weights to take any value they need to learn complex artistic features while still maintaining the mathematical stability required for the Earth Mover distance to be calculated correctly.
             """)
 
-            st.markdown("### 🧠 **IX. Weight Initialization & Kaiming Scaling**")
+            st.markdown("### 🖼️ **IX. Weight Initialization & Kaiming Scaling**")
             st.markdown("""
             How you start the network matters as much as how you train it. If the initial weights are too large, the activations explode; if too small, they vanish.
             
@@ -1458,7 +1458,7 @@ def main():
             We initialize our weights using a specialized Gaussian distribution with a mean of 0.0 and a standard deviation of 0.02. In the DCGAN research, this was found to be the "Goldilocks" zone for GAN stability. High-resolution art training is extremely sensitive to these initial conditions, as the adversarial game can be won or lost in the very first forward pass based on how much "signal" survives the journey through the deep convolutional layers.
             """)
 
-            st.markdown("### 🚀 **X. Forward Pass Engineering**")
+            st.markdown("### ♾️ **X. Forward Pass Engineering**")
             st.markdown("""
             Behind the scenes, the training involves several advanced engineering choices:
             - **Adam Optimizer Momentum:** Standard Stochastic Gradient Descent (SGD) is too rigid for GANs. We use **Adam**, which maintains a "weighted moving average" of past gradients (momentum), allowing the optimization to "glide" over noisy local minima and handle the high-variance loss surfaces of GANs.
