@@ -61,8 +61,6 @@ st.markdown("""
     /* Dreamy, translucent sidebar */
     [data-testid="stSidebar"] {
         background-color: rgba(15, 15, 25, 0.5) !important;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
     
@@ -74,7 +72,6 @@ st.markdown("""
     /* Main block container glassmorphism panel */
     .block-container {
         background-color: rgba(15, 15, 25, 0.4) !important;
-        backdrop-filter: blur(8px);
         border-radius: 20px;
         padding: 2rem 3rem !important;
         border: 1px solid rgba(255, 255, 255, 0.05);
@@ -113,7 +110,6 @@ st.markdown("""
     button[data-baseweb="tab"] {
         background-color: rgba(0,0,0,0.4) !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
-        backdrop-filter: blur(5px);
         border-radius: 10px 10px 0 0;
         margin-right: 5px;
     }
