@@ -1015,7 +1015,7 @@ def main():
     st.markdown("""
     <div class="main-subtitle" style="text-align: center; margin-bottom: 2rem;">
         <h3 style="font-weight: 300;">
-            ✨ Train powerful GANs on your images • 🖼️ Multiple model architectures • 🎯 Professional results
+            ✨ Train powerful GANs on your images • 🖼️ Multiple model architectures 
         </h3>
     </div>
     """, unsafe_allow_html=True)
