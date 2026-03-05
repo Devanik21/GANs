@@ -52,6 +52,8 @@ if os.path.exists("image (1).png"):
 # Custom CSS for magical, dreamy, transparent pixel image
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
     /* Make the main containers and header totally transparent */
     [data-testid="stAppViewContainer"], 
     [data-testid="stHeader"] {
@@ -84,19 +86,22 @@ st.markdown("""
     }
 
     .big-title {
-        font-size: 3.5rem !important;
-        background: linear-gradient(to right, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3);
+        font-family: 'Press Start 2P', cursive !important;
+        font-size: 2.8rem !important;
+        /* Adjusted Gradient to match shooting stars (Magenta, Cyan, Gold) */
+        background: linear-gradient(to right, #ff33cc, #33ccff, #ffcc00);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
-        margin-bottom: 1rem !important;
+        margin-bottom: 2rem !important;
         text-shadow: none !important; 
         filter: none !important; 
+        letter-spacing: -2px;
     }
 
-    /* Subtitle styling with absolutely no shading */
+    /* Subtitle styling matching the light blue star highlights */
     .main-subtitle h3 {
-        color: rgba(255, 255, 255, 0.9) !important;
+        color: #99ffff !important;
         text-shadow: none !important;
         font-weight: 300 !important;
     }
