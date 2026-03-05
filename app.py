@@ -995,7 +995,7 @@ def load_model_from_db(name):
 # Streamlit UI
 def main():
     # Colorful animated title
-    st.markdown('<h1 class="big-title">🎨 AI Art Generator Studio</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="big-title"> AI Art Generator Studio</h1>', unsafe_allow_html=True)
     
     # Colorful subtitle with gradient
     st.markdown("""
