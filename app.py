@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from PIL import Image
 import io
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltF
 import gc
 import os
 # Add these imports at the top of your file
@@ -1088,7 +1088,7 @@ def main():
             st.sidebar.progress(progress_percentage, f"📈 Dataset completeness: {num_files}/20+ images")
             
             # Show sample images with better styling
-            if st.sidebar.checkbox("👀 **Preview uploaded images**", help="See what you're training on"):
+            if st.sidebar.checkbox(" **Preview uploaded images**", help="See what you're training on"):
                 st.sidebar.markdown("#### 🖼️ **Image Preview**")
                 num_previews = min(4, num_files)
                 for i, file in enumerate(uploaded_files[:num_previews]):
