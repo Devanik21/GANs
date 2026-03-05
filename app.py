@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
-import numpy as np
+import numpy as np 
 from PIL import Image
 import io
 import matplotlib.pyplot as plt
