@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
-import numpy as np 
+import numpy as np
 from PIL import Image
 import io
 import matplotlib.pyplot as plt
@@ -46,8 +46,8 @@ def set_png_as_page_bg(bin_file):
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # Set the local background image
-if os.path.exists("Aesthetic_3.png"):
-    set_png_as_page_bg("Aesthetic_3.png")
+if os.path.exists("Aesthetic.png"):
+    set_png_as_page_bg("Aesthetic.png")
 
 # Custom CSS for magical, dreamy, transparent pixel aesthetic
 st.markdown("""
@@ -58,10 +58,10 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Dreamy, translucent sidebar */
+    /* Dreamy, translucent sidebar - Increased Opacity for Readability */
     [data-testid="stSidebar"] {
-        background-color: rgba(15, 15, 25, 0.5) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(10, 10, 20, 0.85) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
     }
     
     /* Sidebar inner content background reset */
@@ -69,13 +69,18 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Main block container glassmorphism panel */
+    /* Main block container glassmorphism panel - Increased Opacity for Contrast */
     .block-container {
-        background-color: rgba(15, 15, 25, 0.4) !important;
+        background-color: rgba(10, 10, 20, 0.8) !important;
         border-radius: 20px;
-        padding: 2rem 3rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        padding: 2.5rem 3.5rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    /* CRITICAL: Add Text Shadows to EVERYTHING for readability */
+    p, span, label, div, li, h1, h2, h3, h4, h5, h6 {
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 1), 0px 0px 10px rgba(0, 0, 0, 0.8) !important;
     }
 
     .big-title {
@@ -97,12 +102,12 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
 
-    /* Glassmorphism for inputs and widgets */
+    /* Contrast for inputs and widgets */
     div[data-baseweb="select"] > div, 
     input, 
     div[data-testid="stFileUploader"] {
-        background-color: rgba(0, 0, 0, 0.5) !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
+        background-color: rgba(0, 0, 0, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
         border-radius: 8px;
     }
     
