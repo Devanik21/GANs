@@ -1389,10 +1389,10 @@ def main():
             
             st.markdown("### 🧪 **Wasserstein GAN (WGAN-GP)**")
             st.markdown("""
-            Standard GANs often suffer from **Mode Collapse** and **Vanishing Gradients**. This app implements **WGAN with Gradient Penalty**, which uses the Earth Mover's (Wasserstein-1) distance:
+            Standard GANs often suffer from **Mode Collapse** and **Vanishing Gradients**. This app implements **WGAN with Gradient Penalty**, which uses the Earth Mover's (Wasserstein-1) distance to measure the distance between distributions.
             
-            - **Critic Loss:** $L = \mathbb{E}_{\tilde{x} \sim P_g}[D(\tilde{x})] - \mathbb{E}_{x \sim P_r}[D(x)] + \lambda \mathbb{E}_{\hat{x} \sim P_{\hat{x}}}[(||\nabla_{\hat{x}} D(\hat{x})||_2 - 1)^2]$
-            - The Gradient Penalty term (the L2 norm of the gradient) enforces the **1-Lipschitz continuity** constraint, leading to much more stable training.
+            - **Critic optimization:** The Discriminator (called a Critic in WGAN) is trained to provide a smooth, meaningful score for how "real" an image looks.
+            - **Gradient Penalty (GP):** This technique enforces the **1-Lipschitz continuity** constraint, preventing gradients from exploding or vanishing and leading to much more stable training curves.
             """)
 
         with t_col2:
