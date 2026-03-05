@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
-import numpy as np 
+import numpy as np
 from PIL import Image
 import io
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ st.markdown("""
 <style>
     /* Main App Background */
     .stApp {
-        background-image: url("Aesthetic.png");
+        background-image: url("https://raw.githubusercontent.com/debnathk/AGI/main/Aesthetic.png");
         background-size: cover;
         background-repeat: no-repeat;
         background-attachment: fixed;
@@ -65,17 +65,6 @@ st.markdown("""
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* Glowing dreamy text */
-    p, span, label, .stText, li {
-        color: rgba(255, 255, 255, 0.95) !important;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 5px rgba(255,255,255,0.2);
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-        color: white !important;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.9), 0 0 10px rgba(255,255,255,0.4);
-    }
-
     .big-title {
         font-size: 3.5rem !important;
         background: linear-gradient(90deg, #ff9a9a, #a5f2ec, #9ae2f5, #b8ecd4);
@@ -101,14 +90,12 @@ st.markdown("""
     div[data-testid="stFileUploader"] {
         background-color: rgba(0, 0, 0, 0.5) !important;
         border: 1px solid rgba(255,255,255,0.2) !important;
-        color: white !important;
         border-radius: 8px;
     }
     
     /* Tabs styling for the dreamy vibe */
     button[data-baseweb="tab"] {
         background-color: rgba(0,0,0,0.4) !important;
-        color: white !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
         backdrop-filter: blur(5px);
         border-radius: 10px 10px 0 0;
