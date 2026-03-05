@@ -78,21 +78,27 @@ st.markdown("""
         box-shadow: none !important;
     }
     
-    /* Reverting heavy text shadow on labels to avoid "dark" feeling, but keeping some for readability. Removed h1 from this list to keep title clean. */
+    /* Removed all text shadows entirely to avoid any dark/grey shading as requested */
     p, span, label, div, li, h2, h3, h4, h5, h6 {
-        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8) !important;
+        text-shadow: none !important;
     }
 
     .big-title {
-        font-size: 3rem !important;
-        /* Static Rainbow Color */
+        font-size: 3.5rem !important;
         background: linear-gradient(to right, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
-        margin-bottom: 2rem !important;
+        margin-bottom: 1rem !important;
         text-shadow: none !important; 
         filter: none !important; 
+    }
+
+    /* Subtitle styling with absolutely no shading */
+    .main-subtitle h3 {
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-shadow: none !important;
+        font-weight: 300 !important;
     }
 
     /* Fully Transparent inputs */
@@ -1003,8 +1009,8 @@ def main():
     
     # Colorful subtitle with gradient
     st.markdown("""
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <h3 style="color: #666; font-weight: 300;">
+    <div class="main-subtitle" style="text-align: center; margin-bottom: 2rem;">
+        <h3 style="font-weight: 300;">
             ✨ Train powerful GANs on your images • 🖼️ Multiple model architectures • 🎯 Professional results
         </h3>
     </div>
