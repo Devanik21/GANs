@@ -1101,7 +1101,7 @@ def main():
                         st.sidebar.error(f"❌ Error: {file.name}")
     
     # Main interface with tabs
-    tab1, tab2, tab3 = st.tabs(["📤 **Upload & Train**", "🎨 **Generate Art**", "📊 **Model Info**"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📤 **Upload & Train**", "🎨 **Generate Art**", "📊 **Model Info**", "👁️ **Eye Friendly**"])
     
     with tab1:
         # Centered training control since upload is in the sidebar
@@ -1111,7 +1111,7 @@ def main():
             st.markdown("### 🖼️ **Start Training**")
             
             if not uploaded_files:
-                st.info("👆 **Upload images in the sidebar first** to start training your AI!")
+                st.info(" **Upload images in the sidebar first** to start training your AI!")
             else:
                 # Memory estimation with colors
                 estimated_memory = (len(uploaded_files) * img_size * img_size * 3 * 4) / (1024**3)
@@ -1336,6 +1336,31 @@ def main():
             "DCGAN-WGAN": ["🐌 Slower", "💚 Excellent", "🟡 Higher", "💚 Very Stable", "✅ Heavy"]
         }
         st.table(comparison_data)
+
+    with tab4:
+        st.markdown("### 🌑 **Eye Friendly UI**")
+        st.info("Toggle the switch below to slightly blur the highly-detailed background image, making the text easier to read for extended periods.")
+        
+        # Checkbox to toggle blur and save space in session state
+        blur_bg = st.checkbox("🌫️ **Slightly Blur Background**", value=st.session_state.get('blur_bg_state', False), key='blur_bg_checkbox')
+        st.session_state['blur_bg_state'] = blur_bg
+        
+        if blur_bg:
+            st.markdown("""
+            <style>
+                .stApp::before {
+                    content: "";
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                    backdrop-filter: blur(8px);
+                    z-index: -1;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+            st.success("Background blur activated! Text is now easier to read.")
     
     # Bottom section with cleanup
     st.markdown("---")
