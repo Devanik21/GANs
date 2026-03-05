@@ -58,10 +58,10 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Dreamy, translucent sidebar - Increased Opacity for Readability */
+    /* Full Transparency sidebar */
     [data-testid="stSidebar"] {
-        background-color: rgba(10, 10, 20, 0.85) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.2);
+        background-color: transparent !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     /* Sidebar inner content background reset */
@@ -69,18 +69,18 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Main block container glassmorphism panel - Increased Opacity for Contrast */
+    /* Main block container - Full Transparency */
     .block-container {
-        background-color: rgba(10, 10, 20, 0.8) !important;
+        background-color: transparent !important;
         border-radius: 20px;
         padding: 2.5rem 3.5rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: none !important;
     }
-
-    /* CRITICAL: Add Text Shadows to EVERYTHING for readability */
+    
+    /* Reverting heavy text shadow on labels to avoid "dark" feeling, but keeping some for readability */
     p, span, label, div, li, h1, h2, h3, h4, h5, h6 {
-        text-shadow: 2px 2px 8px rgba(0, 0, 0, 1), 0px 0px 10px rgba(0, 0, 0, 0.8) !important;
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8) !important;
     }
 
     .big-title {
@@ -95,19 +95,19 @@ st.markdown("""
         filter: none !important; /* Explicitly remove the dark shade/dropshadow */
     }
 
-    /* Contrast for inputs and widgets */
+    /* Fully Transparent inputs */
     div[data-baseweb="select"] > div, 
     input, 
     div[data-testid="stFileUploader"] {
-        background-color: rgba(0, 0, 0, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        background-color: rgba(0, 0, 0, 0.2) !important; /* Extremely light touch */
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-radius: 8px;
     }
     
-    /* Tabs styling for the dreamy vibe */
+    /* Tab transparency */
     button[data-baseweb="tab"] {
-        background-color: rgba(0,0,0,0.4) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
+        background-color: transparent !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 10px 10px 0 0;
         margin-right: 5px;
     }
