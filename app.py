@@ -23,24 +23,106 @@ st.set_page_config(
     page_icon="🎨"
 )
 
-# Custom CSS for better styling using Streamlit's color system
+# Custom CSS for magical, dreamy, transparent pixel aesthetic
 st.markdown("""
 <style>
+    /* Main App Background */
+    .stApp {
+        background-image: url("Aesthetic.png");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center;
+        image-rendering: pixelated; /* Dreamy pixel style */
+    }
+    
+    /* Make the main containers and header totally transparent */
+    [data-testid="stAppViewContainer"], 
+    [data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+
+    /* Dreamy, translucent sidebar */
+    [data-testid="stSidebar"] {
+        background-color: rgba(15, 15, 25, 0.5) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Sidebar inner content background reset */
+    [data-testid="stSidebar"] > div:first-child {
+        background-color: transparent !important;
+    }
+
+    /* Main block container glassmorphism panel */
+    .block-container {
+        background-color: rgba(15, 15, 25, 0.4) !important;
+        backdrop-filter: blur(8px);
+        border-radius: 20px;
+        padding: 2rem 3rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    /* Glowing dreamy text */
+    p, span, label, .stText, li {
+        color: rgba(255, 255, 255, 0.95) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.8), 0 0 5px rgba(255,255,255,0.2);
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: white !important;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.9), 0 0 10px rgba(255,255,255,0.4);
+    }
+
     .big-title {
-        font-size: 3rem !important;
-        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+        font-size: 3.5rem !important;
+        background: linear-gradient(90deg, #ff9a9a, #a5f2ec, #9ae2f5, #b8ecd4);
         background-size: 400% 400%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: gradient 3s ease infinite;
         text-align: center;
         margin-bottom: 2rem !important;
+        text-shadow: none !important; /* override to allow gradient text */
+        filter: drop-shadow(0px 0px 8px rgba(255,255,255, 0.4)) drop-shadow(0px 4px 6px rgba(0,0,0,0.6));
     }
     
     @keyframes gradient {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
+    }
+
+    /* Glassmorphism for inputs and widgets */
+    div[data-baseweb="select"] > div, 
+    input, 
+    div[data-testid="stFileUploader"] {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: white !important;
+        border-radius: 8px;
+    }
+    
+    /* Tabs styling for the dreamy vibe */
+    button[data-baseweb="tab"] {
+        background-color: rgba(0,0,0,0.4) !important;
+        color: white !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        backdrop-filter: blur(5px);
+        border-radius: 10px 10px 0 0;
+        margin-right: 5px;
+    }
+    
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background-color: rgba(255,255,255,0.15) !important;
+        border-bottom: 2px solid #4ecdc4 !important;
+    }
+    
+    /* Make specific nested blocks more transparent to not stack too darkly */
+    [data-testid="stVerticalBlock"] {
+        background-color: transparent !important;
     }
 </style>
 """, unsafe_allow_html=True)
