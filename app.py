@@ -23,19 +23,35 @@ st.set_page_config(
     page_icon="🎨"
 )
 
-# Custom CSS for magical, dreamy, transparent pixel aesthetic
-st.markdown("""
-<style>
-    /* Main App Background */
-    .stApp {
-        background-image: url("https://raw.githubusercontent.com/debnathk/AGI/main/Aesthetic.png");
+# --- Background Image Encoding ---
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def set_png_as_page_bg(bin_file):
+    bin_str = get_base64_of_bin_file(bin_file)
+    page_bg_img = f'''
+    <style>
+    .stApp {{
+        background-image: url("data:image/png;base64,{bin_str}");
         background-size: cover;
         background-repeat: no-repeat;
         background-attachment: fixed;
         background-position: center;
-        image-rendering: pixelated; /* Dreamy pixel style */
-    }
-    
+        image-rendering: pixelated;
+    }}
+    </style>
+    '''
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# Set the local background image
+if os.path.exists("Aesthetic.png"):
+    set_png_as_page_bg("Aesthetic.png")
+
+# Custom CSS for magical, dreamy, transparent pixel aesthetic
+st.markdown("""
+<style>
     /* Make the main containers and header totally transparent */
     [data-testid="stAppViewContainer"], 
     [data-testid="stHeader"] {
