@@ -49,7 +49,7 @@ def set_png_as_page_bg(bin_file):
 if os.path.exists("Aesthetic.png"):
     set_png_as_page_bg("Aesthetic.png")
 
-# Custom CSS for magical, dreamy, transparent pixel Aesthetic
+# Custom CSS for magical, dreamy, transparent pixel aesthetic
 st.markdown("""
 <style>
     /* Make the main containers and header totally transparent */
@@ -58,9 +58,11 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Dreamy, translucent sidebar - Lighter for less "grey" feel */
+    /* Dreamy, translucent sidebar - Subtle Blur + Soft Tint */
     [data-testid="stSidebar"] {
-        background-color: rgba(10, 10, 20, 0.4) !important;
+        background-color: rgba(20, 20, 45, 0.4) !important;
+        backdrop-filter: blur(12px) saturate(180%);
+        -webkit-backdrop-filter: blur(12px) saturate(180%);
         border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
     
@@ -69,26 +71,38 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Main block container glassmorphism panel - Higher Transparency */
+    /* Main block container - The Glass Pane */
     .block-container {
-        background-color: rgba(10, 10, 20, 0.3) !important;
+        background-color: rgba(20, 20, 45, 0.35) !important;
+        backdrop-filter: blur(10px) saturate(150%);
+        -webkit-backdrop-filter: blur(10px) saturate(150%);
         border-radius: 20px;
         padding: 2.5rem 3.5rem !important;
         border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    /* Soft but effective text lift for 'Easy on Eyes' readability */
+    p, span, label, li, .stMetric, .stMarkdown {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        color: #ffffff !important;
+        letter-spacing: 0.5px;
     }
 
     .big-title {
         font-size: 4rem !important;
         /* Static Rainbow Gradient */
-        background: linear-gradient(to right, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3);
+        background: linear-gradient(to right, #ff3333, #ffae33, #eeff33, #33ff44, #33ffff, #3333ff, #e233ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 2.5rem !important;
         text-shadow: none !important;
-        filter: none !important;
-        -webkit-filter: none !important;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); /* Very light lift */
     }
 
     /* Contrast for inputs and widgets */
@@ -995,7 +1009,7 @@ def load_model_from_db(name):
 # Streamlit UI
 def main():
     # Colorful animated title
-    st.markdown('<h1 class="big-title"> AI Art Generator Studio</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="big-title">🎨 AI Art Generator Studio</h1>', unsafe_allow_html=True)
     
     # Colorful subtitle with gradient
     st.markdown("""
