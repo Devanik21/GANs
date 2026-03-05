@@ -84,22 +84,15 @@ st.markdown("""
     }
 
     .big-title {
-        font-size: 3.5rem !important;
-        background: linear-gradient(90deg, #ff9a9a, #a5f2ec, #9ae2f5, #b8ecd4);
-        background-size: 400% 400%;
+        font-size: 4rem !important;
+        /* Static Rainbow Gradient */
+        background: linear-gradient(to right, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: gradient 3s ease infinite;
         text-align: center;
-        margin-bottom: 2rem !important;
-        text-shadow: none !important; /* override to allow gradient text */
-        filter: drop-shadow(0px 0px 8px rgba(255,255,255, 0.4)) drop-shadow(0px 4px 6px rgba(0,0,0,0.6));
-    }
-    
-    @keyframes gradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+        margin-bottom: 2.5rem !important;
+        text-shadow: none !important; /* No shadow on the title itself */
+        filter: none !important; /* Explicitly remove the dark shade/dropshadow */
     }
 
     /* Contrast for inputs and widgets */
