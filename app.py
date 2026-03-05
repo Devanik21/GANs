@@ -58,12 +58,10 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Dreamy, translucent sidebar - Reduced Blur to see pixels */
+    /* Dreamy, translucent sidebar - Increased Opacity for Readability */
     [data-testid="stSidebar"] {
-        background-color: rgba(20, 20, 45, 0.4) !important;
-        backdrop-filter: blur(4px) saturate(180%);
-        -webkit-backdrop-filter: blur(4px) saturate(180%);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(10, 10, 20, 0.85) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
     }
     
     /* Sidebar inner content background reset */
@@ -71,26 +69,18 @@ st.markdown("""
         background-color: transparent !important;
     }
 
-    /* Main block container - The Glass Pane - Reduced Blur to see pixels */
+    /* Main block container glassmorphism panel - Increased Opacity for Contrast */
     .block-container {
-        background-color: rgba(20, 20, 45, 0.35) !important;
-        backdrop-filter: blur(4px) saturate(150%);
-        -webkit-backdrop-filter: blur(4px) saturate(150%);
+        background-color: rgba(10, 10, 20, 0.8) !important;
         border-radius: 20px;
         padding: 2.5rem 3.5rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
     }
 
-    /* Soft but effective text lift for 'Easy on Eyes' readability */
-    p, span, label, li, .stMetric, .stMarkdown {
-        color: #ffffff !important;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-        color: #ffffff !important;
-        letter-spacing: 0.5px;
+    /* CRITICAL: Add Text Shadows to EVERYTHING for readability */
+    p, span, label, div, li, h1, h2, h3, h4, h5, h6 {
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 1), 0px 0px 10px rgba(0, 0, 0, 0.8) !important;
     }
 
     .big-title {
@@ -101,9 +91,8 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 2.5rem !important;
-        text-shadow: none !important;
-        filter: none !important;
-        -webkit-filter: none !important;
+        text-shadow: none !important; /* No shadow on the title itself */
+        filter: none !important; /* Explicitly remove the dark shade/dropshadow */
     }
 
     /* Contrast for inputs and widgets */
