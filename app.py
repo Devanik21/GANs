@@ -78,21 +78,21 @@ st.markdown("""
         box-shadow: none !important;
     }
     
-    /* Reverting heavy text shadow on labels to avoid "dark" feeling, but keeping some for readability */
-    p, span, label, div, li, h1, h2, h3, h4, h5, h6 {
+    /* Reverting heavy text shadow on labels to avoid "dark" feeling, but keeping some for readability. Removed h1 from this list to keep title clean. */
+    p, span, label, div, li, h2, h3, h4, h5, h6 {
         text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8) !important;
     }
 
     .big-title {
-        font-size: 4rem !important;
-        /* Static Rainbow Gradient */
+        font-size: 3rem !important;
+        /* Static Rainbow Color */
         background: linear-gradient(to right, #ff2400, #e81d1d, #e8b71d, #1de840, #1ddde8, #2b1de8, #dd00f3);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-align: center;
-        margin-bottom: 2.5rem !important;
-        text-shadow: none !important; /* No shadow on the title itself */
-        filter: none !important; /* Explicitly remove the dark shade/dropshadow */
+        margin-bottom: 2rem !important;
+        text-shadow: none !important; 
+        filter: none !important; 
     }
 
     /* Fully Transparent inputs */
