@@ -1,6 +1,6 @@
 # GAN Studio: A Deep Learning Framework for Generative Adversarial Networks
 
-![GAN Studio Preview](Aesthetic.png)
+![GAN Studio Preview](Aesthetic.png) 
 
 Welcome to **GAN Studio**, a sophisticated, high-performance framework designed for the exploration, training, and deployment of Generative Adversarial Networks (GANs). This repository provides a robust environment for synthesizing high-fidelity imagery using state-of-the-art architectures, specifically tailored for stability and efficiency in constrained hardware environments.
 
